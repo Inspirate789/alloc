@@ -20,7 +20,7 @@ type Test struct {
 
 type TestPtr *Test
 
-func subWork() TestPtr {
+func subWork() *TestPtr {
 	ptr := TestPtr(arena.New[Test](mem))
 	doublePtr := &ptr
 	runtime.SetFinalizer(doublePtr, func(a *TestPtr) { fmt.Println("pointer finalizer called") })
@@ -29,12 +29,12 @@ func subWork() TestPtr {
 	debug.ReadGCStats(&stats)
 	fmt.Printf("NumGC: %d\n", stats.NumGC)
 
-	return ptr
+	return doublePtr
 }
 
 func Work() {
-	ptr := subWork()
-	fmt.Println(ptr.A)
+	doublePtr := subWork()
+	fmt.Println((*doublePtr).A)
 
 	var stats debug.GCStats
 	debug.ReadGCStats(&stats)
