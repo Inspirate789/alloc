@@ -49,6 +49,14 @@ func BenchmarkGC(b *testing.B) {
 	// runtime.GC()
 }
 
+//func BenchmarkNoGCMultipleArenas(b *testing.B) {
+//	for i := 0; i < b.N; i++ {
+//		ar := arena.NewArena()
+//		data = arena.New[Data](ar)
+//		// ar.Free()
+//	}
+//}
+
 //func TestSize(t *testing.T) {
 //	println(unsafe.Sizeof(Data{}))
 //	println(reflect.TypeOf(Data{}).Size())
