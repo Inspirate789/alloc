@@ -10,10 +10,6 @@ type SliceGetter[T any] interface {
 	Get() []T
 }
 
-func init() {
-	// TODO
-}
-
 func New[T any]() Getter[T] {
 	return nil // TODO
 }
