@@ -14,6 +14,8 @@ type debugger struct {
 	objectsFreed     atomic.Uint64
 }
 
+var Debugger = debugger{}
+
 type AllocStats struct {
 	// LastCC - Unix timestamp
 	LastCC           int64 // CC - Cycle Collection
@@ -25,8 +27,6 @@ type AllocStats struct {
 	ObjectsAllocated uint64
 	ObjectsFreed     uint64
 }
-
-var Debugger = debugger{}
 
 func (d *debugger) ReadAllocStats(stats *AllocStats) {
 	if stats != nil {

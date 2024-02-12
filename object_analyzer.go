@@ -1,4 +1,4 @@
-package generation
+package alloc
 
 import "reflect"
 
