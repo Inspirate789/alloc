@@ -15,7 +15,7 @@ type debugger struct {
 }
 
 type AllocStats struct {
-	// lastCC - Unix timestamp
+	// LastCC - Unix timestamp
 	LastCC           int64 // CC - Cycle Collection
 	NumCC            uint64
 	BytesAllocated   uint64
