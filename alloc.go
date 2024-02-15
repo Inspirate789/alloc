@@ -2,7 +2,10 @@
 
 package alloc
 
-import "runtime"
+import (
+	"arena"
+	"runtime"
+)
 
 type Getter[T any] interface {
 	Get() *T
@@ -53,9 +56,9 @@ func MakeSlice[T any](len, cap int) SliceGetter[T] {
 }
 
 func Clone[T any](getter Getter[T]) T {
-	return *new(T) // TODO
+	return arena.Clone[T](*getter.Get())
 }
 
 func CloneSlice[S ~[]E, E any](getter SliceGetter[E]) S {
-	return nil // TODO
+	return arena.Clone[S](getter.Get())
 }
