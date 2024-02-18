@@ -73,6 +73,7 @@ func (d cycleDetector) detectCycles(object reflect.Value) {
 	case reflect.UnsafePointer:
 		ptr := object.UnsafePointer()
 		p := object.Pointer()
+		reflect.Indirect()
 		// TODO
 	case reflect.Uintptr:
 		// TODO
