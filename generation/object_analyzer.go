@@ -1,6 +1,9 @@
-package alloc
+package generation
 
-import "reflect"
+import (
+	"alloc"
+	"reflect"
+)
 
 func extractNestedObjects(object reflect.Value) (nestedObjects []uintptr, nextObjects []reflect.Value) {
 	switch object.Kind() {
@@ -27,12 +30,6 @@ func extractNestedObjects(object reflect.Value) (nestedObjects []uintptr, nextOb
 	}
 
 	return
-}
-
-type addressContainer[K comparable, V any] interface {
-	Set(key K, value V)
-	Get(key K) (value V, exist bool)
-	Delete(key K)
 }
 
 type color int
@@ -85,7 +82,7 @@ func (d cycleDetector) detectCycles(object reflect.Value) {
 // roots must be pointers to the root objects
 func detectCycleReferences(roots []any) [][]uintptr {
 	detector := cycleDetector{
-		coloredAddresses: addressMap[uintptr, color](make(map[uintptr]color, len(roots))),
+		coloredAddresses: alloc.addressMap[uintptr, color](make(map[uintptr]color, len(roots))),
 	}
 
 }

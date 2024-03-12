@@ -32,27 +32,19 @@ func (g sliceGetter[T]) Get() []T {
 }
 
 func New[T any]() Getter[T] {
-	get, linkFinalizer := allocateObject[T]()
-	g := getter[T]{
-		get: func() *T {
-			return get()
-		},
-	}
-	runtime.SetFinalizer(&g, func(_ *getter[T]) { linkFinalizer() })
+	get, finalize := allocateObject[T]()
+	g := getter[T]{get: get}
+	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
 
-	return g // &g ?
+	return g
 }
 
 func MakeSlice[T any](len, cap int) SliceGetter[T] {
-	get, linkFinalizer := allocateSlice[T]()
-	g := sliceGetter[T]{
-		get: func() []T {
-			return get()
-		},
-	}
-	runtime.SetFinalizer(&g, func(_ *getter[T]) { linkFinalizer() })
+	get, finalize := allocateSlice[T](len, cap)
+	g := sliceGetter[T]{get: get}
+	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
 
-	return g // &g ?
+	return g
 }
 
 func Clone[T any](getter Getter[T]) T {
