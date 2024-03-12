@@ -32,7 +32,7 @@ func (g sliceGetter[T]) Get() []T {
 }
 
 func New[T any]() Getter[T] {
-	get, finalize := allocateObject[T]()
+	get, finalize := allocateObject[T](mainHypervisor.mem)
 	g := getter[T]{get: get}
 	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
 
@@ -40,7 +40,7 @@ func New[T any]() Getter[T] {
 }
 
 func MakeSlice[T any](len, cap int) SliceGetter[T] {
-	get, finalize := allocateSlice[T](len, cap)
+	get, finalize := allocateSlice[T](mainHypervisor.mem, len, cap)
 	g := sliceGetter[T]{get: get}
 	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
 

@@ -9,20 +9,14 @@ type memory struct {
 	largeObjectGeneration *generation.Generation
 }
 
-var mem memory
-
-func init() {
-	// TODO
-}
-
-func allocateObject[T any]() (get func() *T, finalize func()) {
+func allocateObject[T any](mem memory) (get func() *T, finalize func()) {
 	// TODO: check if object is large
-	// TODO: check if gc is needed
+	// TODO: check if gc is needed ?
 	return generation.AllocateObject[T](mem.youngGeneration)
 }
 
-func allocateSlice[T any](len, cap int) (get func() []T, finalize func()) {
+func allocateSlice[T any](mem memory, len, cap int) (get func() []T, finalize func()) {
 	// TODO: check if object is large
-	// TODO: check if gc is needed
+	// TODO: check if gc is needed ?
 	return generation.AllocateSlice[T](mem.youngGeneration, len, cap)
 }
