@@ -12,19 +12,20 @@ type addressContainer[K comparable, V any] interface {
 }
 
 type Generation struct {
-	arenas       []limited_arena.LimitedArena
-	age          uint // the amount of garbage collection that a generation has survived
-	collectionMx sync.Mutex
-	addresses    addressContainer[uintptr, bool]
+	movingObjects bool
+	arenas        []limited_arena.LimitedArena
+	age           uint // the amount of garbage collection that a generation has survived
+	collectionMx  sync.Mutex
+	addresses     addressContainer[uintptr, bool]
 }
 
-func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
+func AllocateObject[T any](gen *Generation, size uintptr) (get func() *T, finalize func()) {
 	// choose the most loaded arena
 	// allocate object
 	return nil, nil // TODO
 }
 
-func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
+func AllocateSlice[T any](gen *Generation, len, cap int, size uintptr) (get func() []T, finalize func()) {
 	// choose the most loaded arena
 	// allocate slice
 	return nil, nil // TODO

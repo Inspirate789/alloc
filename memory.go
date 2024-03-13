@@ -1,6 +1,11 @@
 package alloc
 
-import "alloc/generation"
+import (
+	"alloc/generation"
+	"unsafe"
+)
+
+const objectSizeThreshold = 85_000 // from dotnet
 
 type memory struct {
 	youngGeneration       *generation.Generation
@@ -10,13 +15,19 @@ type memory struct {
 }
 
 func allocateObject[T any](mem memory) (get func() *T, finalize func()) {
-	// TODO: check if object is large
+	size := unsafe.Sizeof(*new(T))
+	if size > objectSizeThreshold {
+		return generation.AllocateObject[T](mem.largeObjectGeneration, size)
+	}
+	return generation.AllocateObject[T](mem.youngGeneration, size)
 	// TODO: check if gc is needed ?
-	return generation.AllocateObject[T](mem.youngGeneration)
 }
 
 func allocateSlice[T any](mem memory, len, cap int) (get func() []T, finalize func()) {
-	// TODO: check if object is large
+	size := unsafe.Sizeof(*new(T)) // no allocation
+	if size > objectSizeThreshold {
+		return generation.AllocateSlice[T](mem.largeObjectGeneration, len, cap, size)
+	}
+	return generation.AllocateSlice[T](mem.youngGeneration, len, cap, size)
 	// TODO: check if gc is needed ?
-	return generation.AllocateSlice[T](mem.youngGeneration, len, cap)
 }
