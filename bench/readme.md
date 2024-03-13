@@ -46,4 +46,4 @@ const (
 
 The memory allocation has exceeded the `userArenaChunkBytes`, so memory is not allocated in the arena (?????).
 
-For this reason, you should not store more than `8^20` bytes in the arena.
+For this reason, you should not store more than `2^23` bytes in the arena (?????).
