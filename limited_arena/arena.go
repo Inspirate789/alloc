@@ -11,7 +11,11 @@ type LimitedArena struct {
 	free  uintptr
 }
 
-const maxArenaSize = 2<<23 - 1
+const (
+	maxArenaSize     = 2<<23 - 1 // TODO
+	MaxLoad          = 0.95      // TODO: avoid using floating point numbers
+	lowLoadThreshold = 0.1
+)
 
 // NewLimitedArena allocates a new arena.
 func NewLimitedArena() LimitedArena {
@@ -30,9 +34,12 @@ func (a LimitedArena) Free() {
 	a.arena.Free()
 }
 
-func size[T any]() uintptr {
-	var val T
-	return unsafe.Sizeof(val)
+func (a LimitedArena) Load() float64 {
+	return 1 - float64(a.free)/maxArenaSize
+}
+
+func sizeOf[T any]() uintptr {
+	return unsafe.Sizeof(*new(T)) // no allocation
 }
 
 // New creates a new *T in the provided arena. The *T must not be used after
@@ -40,9 +47,9 @@ func size[T any]() uintptr {
 // but this fault is also not guaranteed. If there is not enough space in
 // the arena, nil will be returned.
 func New[T any](a *LimitedArena) *T {
-	objectSize := size[T]()
-	if objectSize < a.free {
-		a.free -= objectSize
+	size := sizeOf[T]()
+	if size < a.free || a.Load() < lowLoadThreshold {
+		a.free -= size
 		return arena.New[T](a.arena)
 	} else {
 		return nil
@@ -53,9 +60,9 @@ func New[T any](a *LimitedArena) *T {
 // not be used after the arena is freed. Accessing the underlying storage of the
 // slice after free may result in a fault, but this fault is also not guaranteed.
 func MakeSlice[T any](a *LimitedArena, len, cap int) []T {
-	arraySize := size[T]() * uintptr(cap)
-	if arraySize < a.free {
-		a.free -= arraySize
+	size := sizeOf[T]() * uintptr(cap)
+	if size < a.free || a.Load() < lowLoadThreshold {
+		a.free -= size
 		return arena.MakeSlice[T](a.arena, len, cap)
 	} else {
 		return nil
