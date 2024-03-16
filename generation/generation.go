@@ -37,12 +37,12 @@ type Generation struct {
 	slices        addressContainer[uint64, *sliceMetadata]  // uuid -> metadata
 }
 
-type pointer[T any] interface {
+type holder[T any] interface {
 	*T | []T
 }
 
-func allocate[T any, TPtr pointer[T]](gen *Generation, allocateFunc func(*limited_arena.LimitedArena) TPtr) (TPtr, int) {
-	var ptr TPtr
+func allocate[T any, H holder[T]](gen *Generation, allocateFunc func(*limited_arena.LimitedArena) H) (H, int) {
+	var ptr H
 	var index int
 	for i, arena := range gen.arenas {
 		if arena.Load() < limited_arena.MaxLoad {
