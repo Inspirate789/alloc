@@ -47,6 +47,10 @@ func MakeSlice[T any](len, cap int) SliceGetter[T] {
 	return g
 }
 
+func Append[T any](getter SliceGetter[T], elems ...T) {
+	appendSlice(mainHypervisor.mem, getter.Get(), elems...)
+}
+
 func Clone[T any](getter Getter[T]) T {
 	return arena.Clone[T](*getter.Get())
 }
