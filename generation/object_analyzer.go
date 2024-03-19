@@ -1,7 +1,7 @@
 package generation
 
 import (
-	"alloc"
+	"github.com/Inspirate789/alloc"
 	"reflect"
 )
 

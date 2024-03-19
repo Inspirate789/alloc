@@ -1,6 +1,6 @@
 package alloc
 
-import "alloc/generation"
+import "github.com/Inspirate789/alloc/generation"
 
 var mainHypervisor hypervisor
 
