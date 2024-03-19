@@ -42,7 +42,7 @@ func (sm *SliceMetadata) Address() unsafe.Pointer {
 type Generation struct {
 	movingObjects bool
 	arenas        []limited_arena.LimitedArena
-	collectionMx  sync.Mutex
+	movingMx      sync.Mutex                                // must be locked at both the src and the dst
 	addresses     addressContainer[uint64, *objectMetadata] // uuid -> metadata
 	slices        addressContainer[uint64, *SliceMetadata]  // uuid -> metadata
 }
@@ -57,7 +57,10 @@ func NewGeneration(movingObjects bool) *Generation {
 }
 
 func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *SliceMetadata, exist bool) {
-	return gen.slices.SearchByAddress(slicePtr)
+	gen.movingMx.Lock()
+	metadata, exist = gen.slices.SearchByAddress(slicePtr)
+	gen.movingMx.Unlock()
+	return
 }
 
 type holder[T any] interface {
