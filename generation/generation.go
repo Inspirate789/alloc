@@ -2,6 +2,7 @@ package generation
 
 import (
 	"alloc/limited_arena"
+	"alloc/metadata_container"
 	"math/rand/v2"
 	"sync"
 	"sync/atomic"
@@ -17,21 +18,25 @@ type addressContainer[K comparable, V any] interface {
 
 type objectMetadata struct {
 	lock      sync.Mutex
-	address   unsafe.Pointer
+	addr      unsafe.Pointer
 	finalized atomic.Bool
 }
 
 func (om *objectMetadata) Address() unsafe.Pointer {
-	return om.address
+	return om.addr
 }
 
 type SliceMetadata struct {
 	Lock      sync.Mutex
-	Address   unsafe.Pointer
+	Addr      unsafe.Pointer
 	gen       *Generation
 	finalized atomic.Bool
 	len       int
 	cap       int
+}
+
+func (sm *SliceMetadata) Address() unsafe.Pointer {
+	return sm.Addr
 }
 
 type Generation struct {
@@ -40,6 +45,15 @@ type Generation struct {
 	collectionMx  sync.Mutex
 	addresses     addressContainer[uint64, *objectMetadata] // uuid -> metadata
 	slices        addressContainer[uint64, *SliceMetadata]  // uuid -> metadata
+}
+
+func NewGeneration(movingObjects bool) *Generation {
+	return &Generation{
+		movingObjects: movingObjects,
+		arenas:        []limited_arena.LimitedArena{limited_arena.NewLimitedArena()},
+		addresses:     metadata_container.NewMetadataMap[uint64, *objectMetadata](0),
+		slices:        metadata_container.NewMetadataMap[uint64, *SliceMetadata](0),
+	}
 }
 
 func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *SliceMetadata, exist bool) {
@@ -73,14 +87,14 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	ptr := allocate[T](gen, limited_arena.New[T])
 
 	metadata := objectMetadata{
-		address: unsafe.Pointer(ptr),
+		addr: unsafe.Pointer(ptr),
 	}
 	uuid := rand.Uint64()
 	gen.addresses.Set(uuid, &metadata)
 
 	get = func() *T {
 		metadata.lock.Lock()
-		res := (*T)(metadata.address)
+		res := (*T)(metadata.addr)
 		metadata.lock.Unlock()
 		return res
 	}
@@ -105,17 +119,17 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 	})
 
 	metadata := &SliceMetadata{
-		Address: unsafe.Pointer(&slice[0]),
-		gen:     gen,
-		len:     len,
-		cap:     cap,
+		Addr: unsafe.Pointer(&slice[0]),
+		gen:  gen,
+		len:  len,
+		cap:  cap,
 	}
 	uuid := rand.Uint64() // TODO: is it needed?
 	gen.slices.Set(uuid, metadata)
 
 	get = func() []T {
 		metadata.Lock.Lock()
-		res := makeSliceFromPtr[T](uintptr(metadata.Address), metadata.len, metadata.cap)
+		res := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
 		metadata.Lock.Unlock()
 		return res
 	}
@@ -126,9 +140,9 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 }
 
 func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {
-	slice := makeSliceFromPtr[T](uintptr(metadata.Address), metadata.len, metadata.cap)
+	slice := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
 	slice = append(slice, elems...) // TODO: move on realloc?
-	metadata.Address = unsafe.Pointer(&slice[0])
+	metadata.Addr = unsafe.Pointer(&slice[0])
 	metadata.len = len(slice)
 	metadata.cap = cap(slice)
 

@@ -4,10 +4,8 @@ type hypervisor struct {
 	mem memory
 }
 
-var mainHypervisor hypervisor
-
-func init() {
-	// TODO
+func newHypervisor(mem memory) hypervisor {
+	return hypervisor{mem: mem}
 }
 
 // choose when gc is needed
