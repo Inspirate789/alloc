@@ -1,7 +1,7 @@
 package alloc
 
 import (
-	"github.com/Inspirate789/alloc/generation"
+	"github.com/Inspirate789/alloc/internal/generation"
 	"unsafe"
 )
 

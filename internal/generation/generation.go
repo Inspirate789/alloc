@@ -1,8 +1,8 @@
 package generation
 
 import (
-	"github.com/Inspirate789/alloc/limited_arena"
-	"github.com/Inspirate789/alloc/metadata_container"
+	"github.com/Inspirate789/alloc/internal/limited_arena"
+	"github.com/Inspirate789/alloc/internal/metadata_container"
 	"math/rand/v2"
 	"sync"
 	"sync/atomic"
