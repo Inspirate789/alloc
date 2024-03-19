@@ -72,8 +72,6 @@ func (d cycleDetector) detectCycles(object reflect.Value) {
 		p := object.Pointer()
 		reflect.Indirect()
 		// TODO
-	case reflect.Uintptr:
-		// TODO
 	}
 
 	// TODO: colorize

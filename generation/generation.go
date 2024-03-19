@@ -25,27 +25,21 @@ func (om *objectMetadata) Address() unsafe.Pointer {
 	return om.address
 }
 
-type sliceMetadata struct {
-	lock      sync.Mutex
-	address   *atomic.Uintptr
+type SliceMetadata struct {
+	Lock      sync.Mutex
+	Address   unsafe.Pointer
+	gen       *Generation
 	finalized atomic.Bool
-	gen       *atomic.Pointer[Generation]
 	len       int
 	cap       int
-}
-
-type SliceData struct {
-	Address *atomic.Uintptr // unsafe.Pointer
-	Gen     *atomic.Pointer[Generation]
 }
 
 type Generation struct {
 	movingObjects bool
 	arenas        []limited_arena.LimitedArena
-	age           uint // the amount of garbage collection that a generation has survived // TODO: remove?
 	collectionMx  sync.Mutex
 	addresses     addressContainer[uint64, *objectMetadata] // uuid -> metadata
-	slices        addressContainer[uint64, *sliceMetadata]  // uuid -> metadata
+	slices        addressContainer[uint64, *SliceMetadata]  // uuid -> metadata
 }
 
 type holder[T any] interface {
@@ -101,32 +95,24 @@ func makeSliceFromPtr[T any](ptr uintptr, len, cap int) []T {
 	return *(*[]T)(unsafe.Pointer(&slice))
 }
 
-func AllocateSlice[T any](gen *Generation, len, cap int) (data SliceData, get func() []T, finalize func()) {
+func AllocateSlice[T any](gen *Generation, len, cap int) (metadata *SliceMetadata, get func() []T, finalize func()) {
 	slice := allocate[T](gen, func(arena *limited_arena.LimitedArena) []T {
 		return limited_arena.MakeSlice[T](arena, len, cap)
 	})
 
-	var genPtr *atomic.Pointer[Generation]
-	genPtr.Store(gen)
-	var address *atomic.Uintptr
-	address.Store(uintptr(unsafe.Pointer(&slice[0])))
-	metadata := sliceMetadata{
-		address: address,
-		gen:     genPtr,
+	metadata = &SliceMetadata{
+		Address: unsafe.Pointer(&slice[0]),
+		gen:     gen,
 		len:     len,
 		cap:     cap,
 	}
 	uuid := rand.Uint64() // TODO: is it needed?
-	gen.slices.Set(uuid, &metadata)
+	gen.slices.Set(uuid, metadata)
 
-	data = SliceData{
-		Address: nil,
-		Gen:     metadata.gen,
-	}
 	get = func() []T {
-		metadata.lock.Lock()
-		res := makeSliceFromPtr[T](metadata.address.Load(), metadata.len, metadata.cap)
-		metadata.lock.Unlock()
+		metadata.Lock.Lock()
+		res := makeSliceFromPtr[T](uintptr(metadata.Address), metadata.len, metadata.cap)
+		metadata.Lock.Unlock()
 		return res
 	}
 	finalize = func() {
@@ -135,18 +121,12 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (data SliceData, get fu
 	return
 }
 
-func AppendSlice[T any](gen *Generation, slice []T, elems ...T) {
-	metadata, exist := gen.slices.SearchByAddress(unsafe.Pointer(&slice[0]))
-	if !exist {
-		panic("slice not found in generation") // TODO: remove
-	}
-
-	metadata.lock.Lock()
-	slice = append(slice, elems...)
-	metadata.address.Store(uintptr(unsafe.Pointer(&slice[0])))
+func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {
+	slice := makeSliceFromPtr[T](uintptr(metadata.Address), metadata.len, metadata.cap)
+	slice = append(slice, elems...) // TODO: move on realloc?
+	metadata.Address = unsafe.Pointer(&slice[0])
 	metadata.len = len(slice)
 	metadata.cap = cap(slice)
-	metadata.lock.Unlock()
 
 	return
 }
