@@ -42,6 +42,10 @@ type Generation struct {
 	slices        addressContainer[uint64, *SliceMetadata]  // uuid -> metadata
 }
 
+func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *SliceMetadata, exist bool) {
+	return gen.slices.SearchByAddress(slicePtr)
+}
+
 type holder[T any] interface {
 	*T | []T
 }
@@ -95,12 +99,12 @@ func makeSliceFromPtr[T any](ptr uintptr, len, cap int) []T {
 	return *(*[]T)(unsafe.Pointer(&slice))
 }
 
-func AllocateSlice[T any](gen *Generation, len, cap int) (metadata *SliceMetadata, get func() []T, finalize func()) {
+func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
 	slice := allocate[T](gen, func(arena *limited_arena.LimitedArena) []T {
 		return limited_arena.MakeSlice[T](arena, len, cap)
 	})
 
-	metadata = &SliceMetadata{
+	metadata := &SliceMetadata{
 		Address: unsafe.Pointer(&slice[0]),
 		gen:     gen,
 		len:     len,
