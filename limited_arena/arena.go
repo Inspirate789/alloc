@@ -1,3 +1,5 @@
+//go:build goexperiment.arenas
+
 package limited_arena
 
 import (
