@@ -6,4 +6,4 @@ type address interface {
 	Address() unsafe.Pointer
 }
 
-// TODO: RB-tree
+// TODO: map or RB tree

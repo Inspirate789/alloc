@@ -9,38 +9,30 @@ import (
 
 type addressContainer[V any] interface {
 	Add(value V)
-	SearchByAddress(addr unsafe.Pointer) (value V, exist bool)
+	Search(addr unsafe.Pointer) (value V, exist bool)
+	Move(old unsafe.Pointer, new unsafe.Pointer) (value V, exist bool)
+	Map(func(value V))
 	Delete(addr unsafe.Pointer)
 }
 
 // finalized || (cyclicallyReferenced && referenceCount == 0) ==> dead object
-type gcFields struct {
+type objectMetadata struct {
+	Lock                 sync.Mutex
+	Addr                 unsafe.Pointer
 	cyclicallyReferenced bool
 	referenceCount       uint // founded references (not all)
 	finalized            atomic.Bool
 }
 
-type objectMetadata struct {
-	lock sync.Mutex
-	addr unsafe.Pointer
-	gcFields
-}
-
 func (om *objectMetadata) Address() unsafe.Pointer {
-	return om.addr
+	return om.Addr // TODO: movingMx? Lock?
 }
 
 type SliceMetadata struct {
-	Lock sync.Mutex
-	Addr unsafe.Pointer
-	gen  *Generation
-	len  int
-	cap  int
-	gcFields
-}
-
-func (sm *SliceMetadata) Address() unsafe.Pointer {
-	return sm.Addr
+	objectMetadata
+	gen *Generation
+	len int
+	cap int
 }
 
 type Generation struct {
@@ -62,7 +54,7 @@ func NewGeneration(movingObjects bool) *Generation {
 
 func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *SliceMetadata, exist bool) {
 	gen.movingMx.Lock()
-	metadata, exist = gen.slices.SearchByAddress(slicePtr)
+	metadata, exist = gen.slices.Search(slicePtr)
 	gen.movingMx.Unlock()
 	return
 }

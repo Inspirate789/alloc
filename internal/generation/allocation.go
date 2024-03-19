@@ -2,7 +2,6 @@ package generation
 
 import (
 	"github.com/Inspirate789/alloc/internal/limited_arena"
-	"math/rand/v2"
 	"unsafe"
 )
 
@@ -33,15 +32,14 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	ptr := allocate[T](gen, limited_arena.New[T])
 
 	metadata := objectMetadata{
-		addr: unsafe.Pointer(ptr),
+		Addr: unsafe.Pointer(ptr),
 	}
-	uuid := rand.Uint64()
-	gen.addresses.Set(uuid, &metadata)
+	gen.addresses.Add(&metadata)
 
 	get = func() *T {
-		metadata.lock.Lock()
-		res := (*T)(metadata.addr)
-		metadata.lock.Unlock()
+		metadata.Lock.Lock()
+		res := (*T)(metadata.Addr)
+		metadata.Lock.Unlock()
 		return res
 	}
 	finalize = func() {
@@ -65,13 +63,14 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 	})
 
 	metadata := &SliceMetadata{
-		Addr: unsafe.Pointer(&slice[0]),
-		gen:  gen,
-		len:  len,
-		cap:  cap,
+		objectMetadata: objectMetadata{
+			Addr: unsafe.Pointer(&slice[0]),
+		},
+		gen: gen,
+		len: len,
+		cap: cap,
 	}
-	uuid := rand.Uint64() // TODO: is it needed?
-	gen.slices.Set(uuid, metadata)
+	gen.slices.Add(metadata)
 
 	get = func() []T {
 		metadata.Lock.Lock()
