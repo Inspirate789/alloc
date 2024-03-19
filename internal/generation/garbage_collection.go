@@ -10,6 +10,6 @@ func (gen *Generation) Contains(ptr unsafe.Pointer) bool {
 	return exist
 }
 
-func (gen *Generation) Cleanup(isObservableObject func(unsafe.Pointer) bool) {
+func (gen *Generation) Cleanup() {
 	// TODO
 }
