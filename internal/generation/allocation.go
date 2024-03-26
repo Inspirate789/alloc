@@ -2,6 +2,7 @@ package generation
 
 import (
 	"github.com/Inspirate789/alloc/internal/limited_arena"
+	"reflect"
 	"unsafe"
 )
 
@@ -32,7 +33,8 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	ptr := allocate[T](gen, limited_arena.New[T])
 
 	metadata := objectMetadata{
-		Addr: unsafe.Pointer(ptr),
+		Addr:     unsafe.Pointer(ptr),
+		typeInfo: reflect.TypeOf(*ptr),
 	}
 	gen.addresses.Add(&metadata)
 
@@ -64,7 +66,8 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 	metadata := &SliceMetadata{
 		objectMetadata: objectMetadata{
-			Addr: unsafe.Pointer(&slice[0]),
+			Addr:     unsafe.Pointer(&slice[0]),
+			typeInfo: reflect.TypeOf(slice),
 		},
 		gen: gen,
 		len: len,
