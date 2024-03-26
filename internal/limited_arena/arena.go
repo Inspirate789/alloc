@@ -14,7 +14,7 @@ type LimitedArena struct {
 }
 
 const (
-	maxArenaSize     = 2<<23 - 1 // TODO
+	maxArenaSize     = 1<<23 - 1 // TODO
 	MaxLoad          = 0.95      // TODO: avoid using floating point numbers
 	lowLoadThreshold = 0.1
 )
