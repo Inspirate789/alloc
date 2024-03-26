@@ -19,6 +19,7 @@ type addressContainer[V any] interface {
 type objectMetadata struct {
 	Lock                 sync.Mutex
 	Addr                 unsafe.Pointer
+	lastGcID             uint64
 	cyclicallyReferenced bool
 	referenceCount       uint // founded references (not all)
 	finalized            atomic.Bool
@@ -38,9 +39,9 @@ type SliceMetadata struct {
 type Generation struct {
 	movingObjects bool
 	arenas        []limited_arena.LimitedArena
-	movingMx      sync.Mutex                        // must be locked at both the src and the dst
-	addresses     addressContainer[*objectMetadata] // uuid -> metadata
-	slices        addressContainer[*SliceMetadata]  // uuid -> metadata
+	movingMx      sync.Mutex // must be locked at both the src and the dst
+	addresses     addressContainer[*objectMetadata]
+	slices        addressContainer[*SliceMetadata]
 }
 
 func NewGeneration(movingObjects bool) *Generation {
