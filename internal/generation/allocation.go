@@ -89,7 +89,7 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {
 	slice := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
-	slice = append(slice, elems...) // TODO: move on realloc?
+	slice = append(slice, elems...) // maybe move on realloc
 	metadata.Addr = unsafe.Pointer(&slice[0])
 	metadata.len = len(slice)
 	metadata.cap = cap(slice)
