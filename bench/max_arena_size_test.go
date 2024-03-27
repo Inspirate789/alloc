@@ -44,5 +44,6 @@ func TestConstants(t *testing.T) {
 	t.Log(heapArenaBytes)
 	t.Log(userArenaChunkBytesMax)
 	t.Log(userArenaChunkBytes)
+	t.Log(float64(userArenaChunkBytes) / userArenaChunkBytesMax)
 	t.Log(userArenaChunkMaxAllocBytes)
 }
