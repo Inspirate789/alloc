@@ -35,7 +35,6 @@ func (om *objectMetadata) Address() unsafe.Pointer {
 
 type SliceMetadata struct {
 	objectMetadata
-	gen *Generation // TODO: remove
 	len int
 	cap int
 }
