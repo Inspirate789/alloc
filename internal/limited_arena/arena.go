@@ -14,9 +14,10 @@ type LimitedArena struct {
 }
 
 const (
-	maxArenaSize     = 1<<23 - 1 // TODO
-	MaxLoad          = 0.95      // TODO: avoid using floating point numbers
-	lowLoadThreshold = 0.1
+	maxArenaSize       = 1<<23 - 1 // TODO
+	loadThreshold      = 0.95
+	arenaSizeThreshold = uintptr(float64(maxArenaSize * loadThreshold))
+	minArenaSize       = maxArenaSize - arenaSizeThreshold
 )
 
 // NewLimitedArena allocates a new arena.
@@ -50,7 +51,7 @@ func sizeOf[T any]() uintptr {
 // the arena, nil will be returned.
 func New[T any](a *LimitedArena) *T {
 	size := sizeOf[T]()
-	if size < a.free || a.Load() < lowLoadThreshold {
+	if a.free-size >= minArenaSize {
 		a.free -= size
 		return arena.New[T](a.arena)
 	} else {
@@ -63,7 +64,7 @@ func New[T any](a *LimitedArena) *T {
 // slice after free may result in a fault, but this fault is also not guaranteed.
 func MakeSlice[T any](a *LimitedArena, len, cap int) []T {
 	size := sizeOf[T]() * uintptr(cap)
-	if size < a.free || a.Load() < lowLoadThreshold {
+	if a.free-size >= minArenaSize {
 		a.free -= size
 		return arena.MakeSlice[T](a.arena, len, cap)
 	} else {

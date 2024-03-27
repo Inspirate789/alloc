@@ -13,11 +13,9 @@ type holder[T any] interface {
 func allocate[T any, H holder[T]](gen *Generation, allocateFunc func(*limited_arena.LimitedArena) H) H {
 	var ptr H
 	for _, arena := range gen.arenas {
-		if arena.Load() < limited_arena.MaxLoad {
-			ptr = allocateFunc(&arena)
-			if ptr != nil {
-				break
-			}
+		ptr = allocateFunc(&arena)
+		if ptr != nil {
+			break
 		}
 	}
 	if ptr == nil {
