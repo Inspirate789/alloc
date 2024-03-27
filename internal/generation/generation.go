@@ -2,6 +2,7 @@ package generation
 
 import (
 	"github.com/Inspirate789/alloc/internal/limited_arena"
+	"github.com/Inspirate789/alloc/internal/metadata_container"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -11,7 +12,7 @@ import (
 type addressContainer[V any] interface {
 	Add(value V)
 	Search(addr unsafe.Pointer) (value V, exist bool)
-	Move(old unsafe.Pointer, new unsafe.Pointer) (value V, exist bool)
+	Move(old unsafe.Pointer, new unsafe.Pointer)
 	Map(func(value V))
 	Delete(addr unsafe.Pointer)
 }
@@ -53,10 +54,10 @@ func NewGeneration(movingObjects bool) *Generation {
 	return &Generation{
 		movingObjects:           movingObjects,
 		arenas:                  []limited_arena.LimitedArena{limited_arena.NewLimitedArena()},
-		addresses:               nil, // TODO
-		uncontrollableAddresses: nil, // TODO
-		slices:                  nil, // TODO
-		uncontrollableSlices:    nil, // TODO
+		addresses:               metadata_container.NewAddressMap[*objectMetadata](),
+		uncontrollableAddresses: metadata_container.NewAddressMap[*objectMetadata](),
+		slices:                  metadata_container.NewAddressMap[*SliceMetadata](),
+		uncontrollableSlices:    metadata_container.NewAddressMap[*SliceMetadata](),
 	}
 }
 
