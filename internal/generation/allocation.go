@@ -10,31 +10,38 @@ type holder[T any] interface {
 	*T | []T
 }
 
-func allocate[T any, H holder[T]](gen *Generation, allocateFunc func(*limited_arena.LimitedArena) H) H {
-	var ptr H
+type allocateFunc[H holder[T], T any] func(*limited_arena.LimitedArena) (H, bool)
+
+func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H, T]) (ptr H, controllable bool) {
 	for _, arena := range gen.arenas {
-		ptr = allocateFunc(&arena)
+		ptr, controllable = allocateObject(&arena)
 		if ptr != nil {
 			break
 		}
 	}
 	if ptr == nil {
 		arena := limited_arena.NewLimitedArena()
-		ptr = allocateFunc(&arena)
+		ptr, controllable = allocateObject(&arena)
 		gen.arenas = append(gen.arenas, arena)
 	}
 
-	return ptr
+	return ptr, controllable
 }
 
 func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
-	ptr := allocate[T](gen, limited_arena.New[T])
+	ptr, controllable := allocate[T](gen, limited_arena.New[T])
 
 	metadata := objectMetadata{
 		Addr:     unsafe.Pointer(ptr),
 		typeInfo: reflect.TypeOf(*ptr),
 	}
-	gen.addresses.Add(&metadata)
+
+	if !controllable {
+		gen.uncontrollableAddresses.Add(&metadata)
+	} else {
+		metadata.controllable = true
+		gen.addresses.Add(&metadata)
+	}
 
 	get = func() *T {
 		metadata.Lock.Lock()
@@ -58,11 +65,11 @@ func makeSliceFromPtr[T any](ptr uintptr, len, cap int) []T {
 }
 
 func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
-	slice := allocate[T](gen, func(arena *limited_arena.LimitedArena) []T {
+	slice, controllable := allocate[T](gen, func(arena *limited_arena.LimitedArena) ([]T, bool) {
 		return limited_arena.MakeSlice[T](arena, len, cap)
 	})
 
-	metadata := &SliceMetadata{
+	metadata := SliceMetadata{
 		objectMetadata: objectMetadata{
 			Addr:     unsafe.Pointer(&slice[0]),
 			typeInfo: reflect.TypeOf(slice),
@@ -71,7 +78,13 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 		len: len,
 		cap: cap,
 	}
-	gen.slices.Add(metadata)
+
+	if !controllable {
+		gen.uncontrollableSlices.Add(&metadata)
+	} else {
+		metadata.controllable = true
+		gen.slices.Add(&metadata)
+	}
 
 	get = func() []T {
 		metadata.Lock.Lock()

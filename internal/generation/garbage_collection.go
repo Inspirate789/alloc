@@ -17,6 +17,16 @@ func (gen *Generation) searchMetadata(addr unsafe.Pointer) (metadata *objectMeta
 			metadata = &sliceMetadata.objectMetadata
 		}
 	}
+	if !exist {
+		metadata, exist = gen.uncontrollableAddresses.Search(addr)
+	}
+	if !exist {
+		var sliceMetadata *SliceMetadata
+		sliceMetadata, exist = gen.uncontrollableSlices.Search(addr)
+		if sliceMetadata != nil {
+			metadata = &sliceMetadata.objectMetadata
+		}
+	}
 	return
 }
 

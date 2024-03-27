@@ -14,6 +14,7 @@ type LimitedArena struct {
 	free  uintptr
 }
 
+// from go/src/runtime/arena.go
 const (
 	// _64bit = 1 on 64-bit systems, 0 on 32-bit systems
 	_64bit = 1 << (^uintptr(0) >> 63) / 2
@@ -41,11 +42,11 @@ const (
 	userArenaChunkBytesMax = 8 << 20
 	userArenaChunkBytes    = uintptr(int64(userArenaChunkBytesMax-heapArenaBytes)&(int64(userArenaChunkBytesMax-heapArenaBytes)>>63) + heapArenaBytes) // min(userArenaChunkBytesMax, heapArenaBytes)
 
-	// UserArenaChunkMaxAllocBytes is the maximum size of an object that can
+	// userArenaChunkMaxAllocBytes is the maximum size of an object that can
 	// be allocated from an arena. This number is chosen to cap worst-case
 	// fragmentation of user arenas to 25%. Larger allocations are redirected
 	// to the heap.
-	UserArenaChunkMaxAllocBytes = userArenaChunkBytes / 4
+	userArenaChunkMaxAllocBytes = userArenaChunkBytes / 4
 
 	// empirical data
 	loadThreshold      = 0.95
@@ -78,25 +79,31 @@ func sizeOf[T any]() uintptr {
 // the arena is freed. Accessing the value after free may result in a fault,
 // but this fault is also not guaranteed. If there is not enough space in
 // the arena, nil will be returned.
-func New[T any](a *LimitedArena) *T {
+func New[T any](a *LimitedArena) (ptr *T, controllable bool) {
 	size := sizeOf[T]()
-	if a.free-size >= minArenaSize {
+	if size > userArenaChunkMaxAllocBytes {
+		// WARN: the allocation will occur outside arena, i.e. in heap (from go/src/runtime/arena.go)
+		return new(T), false
+	} else if a.free-size >= minArenaSize {
 		a.free -= size
-		return arena.New[T](a.arena)
+		return arena.New[T](a.arena), true
 	} else {
-		return nil
+		return nil, false
 	}
 }
 
 // MakeSlice creates a new []T with the provided capacity and length. The []T must
 // not be used after the arena is freed. Accessing the underlying storage of the
 // slice after free may result in a fault, but this fault is also not guaranteed.
-func MakeSlice[T any](a *LimitedArena, len, cap int) []T {
+func MakeSlice[T any](a *LimitedArena, len, cap int) (slice []T, controllable bool) {
 	size := sizeOf[T]() * uintptr(cap)
-	if a.free-size >= minArenaSize {
+	if size > userArenaChunkMaxAllocBytes {
+		// WARN: the allocation will occur outside arena, i.e. in heap (from go/src/runtime/arena.go)
+		return make([]T, len, cap), false
+	} else if a.free-size >= minArenaSize {
 		a.free -= size
-		return arena.MakeSlice[T](a.arena, len, cap)
+		return arena.MakeSlice[T](a.arena, len, cap), true
 	} else {
-		return nil
+		return nil, false
 	}
 }
