@@ -44,13 +44,16 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	}
 
 	get = func() *T {
-		metadata.Lock.Lock()
+		metadata.Lock.RLock()
 		res := (*T)(metadata.Addr)
-		metadata.Lock.Unlock()
+		metadata.Lock.RUnlock()
 		return res
 	}
 	finalize = func() {
-		metadata.finalized.Store(true)
+		finalized := metadata.finalized.Swap(true)
+		if finalized {
+			println("object is already finalized!")
+		}
 	}
 	return
 }
@@ -61,7 +64,7 @@ func makeSliceFromPtr[T any](ptr uintptr, len, cap int) []T {
 		len  int
 		cap  int
 	}{ptr, len, cap}
-	return *(*[]T)(unsafe.Pointer(&slice))
+	return *(*[]T)(unsafe.Pointer(&slice)) // TODO: use unsafe.Slice
 }
 
 func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
@@ -86,23 +89,28 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 	}
 
 	get = func() []T {
-		metadata.Lock.Lock()
+		metadata.Lock.RLock()
 		res := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
-		metadata.Lock.Unlock()
+		metadata.Lock.RUnlock()
 		return res
 	}
 	finalize = func() {
-		metadata.finalized.Store(true)
+		finalized := metadata.finalized.Swap(true)
+		if finalized {
+			println("object is already finalized!")
+		}
 	}
 	return
 }
 
 func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {
+	metadata.Lock.Lock()
 	slice := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
 	slice = append(slice, elems...) // maybe move on realloc
 	metadata.Addr = unsafe.Pointer(&slice[0])
 	metadata.len = len(slice)
 	metadata.cap = cap(slice)
+	metadata.Lock.Unlock()
 
 	return
 }

@@ -30,12 +30,14 @@ func (gen *Generation) searchMetadata(addr unsafe.Pointer) (metadata *objectMeta
 	return
 }
 
-func (gen *Generation) SearchObjectFunc() func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool) {
+type SearchFunc func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool)
+
+func (gen *Generation) SearchObjectFunc() SearchFunc {
 	return gen.searchMetadata
 }
 
-func (gen *Generation) Mark(searchMetadata func(unsafe.Pointer) (*objectMetadata, bool)) {
-	gcID := rand.Uint64()
+func (gen *Generation) Mark(searchMetadata SearchFunc) {
+	gcID := rand.Uint64() // TODO: pass in to Generation.Mark() to share it between generations on parallel marking
 
 	if searchMetadata == nil {
 		searchMetadata = gen.searchMetadata
@@ -61,14 +63,14 @@ func (gen *Generation) Mark(searchMetadata func(unsafe.Pointer) (*objectMetadata
 	}
 
 	gen.addresses.Map(func(metadata *objectMetadata) {
-		objects <- metadata // TODO: movingMx? Lock?
+		objects <- metadata
 	})
 
 	gen.slices.Map(func(metadata *SliceMetadata) {
-		objects <- &metadata.objectMetadata // TODO: movingMx? Lock?
+		objects <- &metadata.objectMetadata
 	})
 
 	close(objects)
 }
 
-// TODO: compact
+// TODO: move and compact

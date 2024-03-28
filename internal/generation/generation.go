@@ -19,7 +19,7 @@ type addressContainer[V any] interface {
 
 // finalized || (cyclicallyReferenced && referenceCount == 0) ==> dead object
 type objectMetadata struct {
-	Lock                 sync.Mutex
+	Lock                 sync.RWMutex // TODO: add anonymous sync.RWMutex instead to make metadata implement the sync.Locker
 	Addr                 unsafe.Pointer
 	typeInfo             reflect.Type
 	controllable         bool
@@ -42,7 +42,6 @@ type SliceMetadata struct {
 type Generation struct {
 	movingObjects           bool
 	arenas                  []limited_arena.LimitedArena
-	movingMx                sync.Mutex // must be locked at both the src and the dst
 	addresses               addressContainer[*objectMetadata]
 	uncontrollableAddresses addressContainer[*objectMetadata]
 	slices                  addressContainer[*SliceMetadata]
@@ -61,8 +60,6 @@ func NewGeneration(movingObjects bool) *Generation {
 }
 
 func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *SliceMetadata, exist bool) {
-	gen.movingMx.Lock()
 	metadata, exist = gen.slices.Search(slicePtr)
-	gen.movingMx.Unlock()
 	return
 }

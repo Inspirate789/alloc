@@ -47,7 +47,5 @@ func appendSlice[T any](mem memory, slice []T, elems ...T) {
 		}
 	}
 
-	metadata.Lock.Lock()
 	generation.AppendSlice(metadata, elems...)
-	metadata.Lock.Lock()
 }

@@ -13,6 +13,8 @@ func NewAddressMap[V address]() AddressMap[V] {
 	return make(AddressMap[V])
 }
 
+// TODO: lock on search
+
 func (am AddressMap[V]) Add(value V) {
 	am[value.Address()] = value
 }

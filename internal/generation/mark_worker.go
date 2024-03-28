@@ -61,11 +61,16 @@ func (mw markWorker) analyzeObject(metadata *objectMetadata) (nextObjects []*obj
 }
 
 func (mw markWorker) processObject(object *objectMetadata) {
+	object.Lock.Lock()
 	skip := mw.markObject(object)
 	if !skip {
-		for _, nextObject := range mw.analyzeObject(object) {
+		nextObjects := mw.analyzeObject(object)
+		object.Lock.Unlock()
+		for _, nextObject := range nextObjects {
 			mw.processObject(nextObject)
 		}
+	} else {
+		object.Lock.Unlock()
 	}
 
 	return
