@@ -29,8 +29,11 @@ type objectMetadata struct {
 	finalized            atomic.Bool
 }
 
-func (om *objectMetadata) Address() unsafe.Pointer {
-	return om.Addr // TODO: movingMx? Lock?
+func (om *objectMetadata) Address() (addr unsafe.Pointer) {
+	om.Lock.RLock()
+	addr = om.Addr
+	om.Lock.RUnlock()
+	return
 }
 
 type SliceMetadata struct {
