@@ -1,7 +1,6 @@
 package generation
 
 import (
-	"math/rand"
 	"runtime"
 	"unsafe"
 )
@@ -36,9 +35,7 @@ func (gen *Generation) SearchObjectFunc() SearchFunc {
 	return gen.searchMetadata
 }
 
-func (gen *Generation) Mark(searchMetadata SearchFunc) {
-	gcID := rand.Uint64() // TODO: pass in to Generation.Mark() to share it between generations on parallel marking
-
+func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 	if searchMetadata == nil {
 		searchMetadata = gen.searchMetadata
 	} else {
