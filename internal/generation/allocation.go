@@ -32,7 +32,7 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	ptr, controllable := allocate[T](gen, limited_arena.New[T])
 
 	metadata := objectMetadata{
-		Addr:     unsafe.Pointer(ptr),
+		address:  unsafe.Pointer(ptr),
 		typeInfo: reflect.TypeOf(*ptr),
 	}
 
@@ -45,7 +45,7 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 
 	get = func() *T {
 		metadata.RLock()
-		res := (*T)(metadata.Addr)
+		res := (*T)(metadata.address)
 		metadata.RUnlock()
 		return res
 	}
@@ -74,7 +74,7 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 	metadata := SliceMetadata{
 		objectMetadata: objectMetadata{
-			Addr:     unsafe.Pointer(&slice[0]),
+			address:  unsafe.Pointer(&slice[0]),
 			typeInfo: reflect.TypeOf(slice),
 		},
 		len: len,
@@ -90,7 +90,7 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 	get = func() []T {
 		metadata.RLock()
-		res := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
+		res := makeSliceFromPtr[T](uintptr(metadata.address), metadata.len, metadata.cap)
 		metadata.RUnlock()
 		return res
 	}
@@ -105,9 +105,9 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {
 	metadata.Lock()
-	slice := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
+	slice := makeSliceFromPtr[T](uintptr(metadata.address), metadata.len, metadata.cap)
 	slice = append(slice, elems...) // maybe move on realloc
-	metadata.Addr = unsafe.Pointer(&slice[0])
+	metadata.address = unsafe.Pointer(&slice[0])
 	metadata.len = len(slice)
 	metadata.cap = cap(slice)
 	metadata.Unlock()

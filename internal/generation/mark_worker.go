@@ -13,12 +13,12 @@ type markWorker struct {
 }
 
 func (mw markWorker) markObject(object *objectMetadata) (skip bool) {
-	if object.lastMarkID == mw.gcID && mw.visited[object.Addr] {
+	if object.lastMarkID == mw.gcID && mw.visited[object.address] {
 		object.cyclicallyReferenced = true
 		return true
 	} else {
 		object.lastMarkID = mw.gcID
-		mw.visited[object.Addr] = true
+		mw.visited[object.address] = true
 		return false
 	}
 }
@@ -46,7 +46,7 @@ func (mw markWorker) extractNestedObjects(object reflect.Value) (nestedObjects [
 }
 
 func (mw markWorker) analyzeObject(metadata *objectMetadata) (nextObjects []*objectMetadata) {
-	object := reflect.NewAt(metadata.typeInfo, metadata.Addr).Elem()
+	object := reflect.NewAt(metadata.typeInfo, metadata.address).Elem()
 	nestedObjects := mw.extractNestedObjects(object)
 	for _, nestedObject := range nestedObjects {
 		addr := nestedObject.Addr().UnsafePointer()
