@@ -19,7 +19,7 @@ type addressContainer[V any] interface {
 
 // finalized || (cyclicallyReferenced && referenceCount == 0) ==> dead object
 type objectMetadata struct {
-	Lock                 sync.RWMutex // TODO: add anonymous sync.RWMutex instead to make metadata implement the sync.Locker
+	sync.RWMutex
 	Addr                 unsafe.Pointer
 	typeInfo             reflect.Type
 	controllable         bool
@@ -30,9 +30,9 @@ type objectMetadata struct {
 }
 
 func (om *objectMetadata) Address() (addr unsafe.Pointer) {
-	om.Lock.RLock()
+	om.RLock()
 	addr = om.Addr
-	om.Lock.RUnlock()
+	om.RUnlock()
 	return
 }
 

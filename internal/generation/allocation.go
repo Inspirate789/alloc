@@ -44,9 +44,9 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	}
 
 	get = func() *T {
-		metadata.Lock.RLock()
+		metadata.RLock()
 		res := (*T)(metadata.Addr)
-		metadata.Lock.RUnlock()
+		metadata.RUnlock()
 		return res
 	}
 	finalize = func() {
@@ -89,9 +89,9 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 	}
 
 	get = func() []T {
-		metadata.Lock.RLock()
+		metadata.RLock()
 		res := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
-		metadata.Lock.RUnlock()
+		metadata.RUnlock()
 		return res
 	}
 	finalize = func() {
@@ -104,13 +104,13 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 }
 
 func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {
-	metadata.Lock.Lock()
+	metadata.Lock()
 	slice := makeSliceFromPtr[T](uintptr(metadata.Addr), metadata.len, metadata.cap)
 	slice = append(slice, elems...) // maybe move on realloc
 	metadata.Addr = unsafe.Pointer(&slice[0])
 	metadata.len = len(slice)
 	metadata.cap = cap(slice)
-	metadata.Lock.Unlock()
+	metadata.Unlock()
 
 	return
 }
