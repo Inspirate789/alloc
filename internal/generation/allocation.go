@@ -58,13 +58,8 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	return
 }
 
-func makeSliceFromPtr[T any](ptr uintptr, len, cap int) []T {
-	var slice = struct {
-		addr uintptr
-		len  int
-		cap  int
-	}{ptr, len, cap}
-	return *(*[]T)(unsafe.Pointer(&slice)) // TODO: use unsafe.Slice
+func makeSliceFromPtr[T any](ptr unsafe.Pointer, len, cap int) []T {
+	return unsafe.Slice((*T)(ptr), cap)[:len]
 }
 
 func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
@@ -90,7 +85,7 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 	get = func() []T {
 		metadata.RLock()
-		res := makeSliceFromPtr[T](uintptr(metadata.address), metadata.len, metadata.cap)
+		res := makeSliceFromPtr[T](metadata.address, metadata.len, metadata.cap)
 		metadata.RUnlock()
 		return res
 	}
@@ -105,7 +100,7 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {
 	metadata.Lock()
-	slice := makeSliceFromPtr[T](uintptr(metadata.address), metadata.len, metadata.cap)
+	slice := makeSliceFromPtr[T](metadata.address, metadata.len, metadata.cap)
 	slice = append(slice, elems...) // maybe move on realloc
 	metadata.address = unsafe.Pointer(&slice[0])
 	metadata.len = len(slice)
