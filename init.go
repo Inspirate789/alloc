@@ -17,4 +17,6 @@ func init() {
 			largeObjectGeneration: generation.NewGeneration(false),
 		},
 	}
+
+	// TODO: go mainHypervisor.Run()
 }
