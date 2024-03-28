@@ -53,7 +53,6 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 	wg := sync.WaitGroup{}
 	for i := 0; i < gcMarkConcurrency; i++ {
 		mw := markWorker{
-			id:             i,
 			gcID:           gcID,
 			visited:        make(map[unsafe.Pointer]bool),
 			searchMetadata: searchMetadata,
