@@ -2,6 +2,7 @@ package generation
 
 import (
 	"runtime"
+	"sync"
 	"unsafe"
 )
 
@@ -49,6 +50,7 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 	}
 
 	objects := make(chan *objectMetadata)
+	wg := sync.WaitGroup{}
 	for i := 0; i < gcMarkConcurrency; i++ {
 		mw := markWorker{
 			id:             i,
@@ -56,7 +58,11 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 			visited:        make(map[unsafe.Pointer]bool),
 			searchMetadata: searchMetadata,
 		}
-		go mw.mark(objects)
+		wg.Add(1)
+		go func() {
+			mw.mark(objects)
+			wg.Done()
+		}()
 	}
 
 	gen.addresses.Map(func(metadata *objectMetadata) {
@@ -68,6 +74,7 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 	})
 
 	close(objects)
+	wg.Wait()
 }
 
 // TODO: move and compact
