@@ -74,7 +74,6 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 			Addr:     unsafe.Pointer(&slice[0]),
 			typeInfo: reflect.TypeOf(slice),
 		},
-		gen: gen,
 		len: len,
 		cap: cap,
 	}

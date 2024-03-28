@@ -49,8 +49,7 @@ const (
 	userArenaChunkMaxAllocBytes = userArenaChunkBytes / 4
 
 	// empirical data
-	loadThreshold      = 0.95
-	arenaSizeThreshold = uintptr(float64(userArenaChunkBytes) * loadThreshold)
+	arenaSizeThreshold = userArenaChunkBytes * 95 / 100
 	minArenaSize       = userArenaChunkBytes - arenaSizeThreshold
 )
 
