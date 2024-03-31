@@ -32,8 +32,9 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 	ptr, controllable := allocate[T](gen, limited_arena.New[T])
 
 	metadata := objectMetadata{
-		address:  unsafe.Pointer(ptr),
-		typeInfo: reflect.TypeOf(*ptr),
+		address:      unsafe.Pointer(ptr),
+		typeInfo:     reflect.TypeOf(*ptr),
+		controllable: controllable,
 	}
 
 	if !controllable {
@@ -69,8 +70,9 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 
 	metadata := SliceMetadata{
 		objectMetadata: objectMetadata{
-			address:  unsafe.Pointer(&slice[0]),
-			typeInfo: reflect.TypeOf(slice),
+			address:      unsafe.Pointer(&slice[0]),
+			typeInfo:     reflect.TypeOf(slice),
+			controllable: controllable,
 		},
 		len: len,
 		cap: cap,
