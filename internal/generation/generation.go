@@ -17,16 +17,20 @@ type addressContainer[V any] interface {
 	Delete(addr unsafe.Pointer)
 }
 
-// finalized || (cyclicallyReferenced && referenceCount == 0) ==> dead object
-type objectMetadata struct {
-	sync.RWMutex
-	address              unsafe.Pointer
-	typeInfo             reflect.Type
-	controllable         bool
+type gcMetadata struct {
 	lastMarkID           uint64
 	cyclicallyReferenced bool
 	referenceCount       uint // founded references (not all)
 	finalized            atomic.Bool
+}
+
+// finalized || (cyclicallyReferenced && referenceCount == 0) ==> dead object
+type objectMetadata struct {
+	sync.RWMutex
+	address      unsafe.Pointer
+	typeInfo     reflect.Type
+	controllable bool
+	gcMetadata
 }
 
 func (om *objectMetadata) Address() (addr unsafe.Pointer) {
