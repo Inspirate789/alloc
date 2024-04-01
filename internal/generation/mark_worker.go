@@ -48,6 +48,9 @@ func (mw markWorker) analyzeObject(metadata *objectMetadata) (nextObjects []*obj
 	object := reflect.NewAt(metadata.typeInfo, metadata.address).Elem()
 	nestedObjects := mw.extractNestedObjects(object)
 	for _, nestedObject := range nestedObjects {
+		if !nestedObject.CanAddr() {
+			continue
+		}
 		addr := nestedObject.Addr().UnsafePointer()
 		if nestedMetadata, exist := mw.searchMetadata(addr); exist {
 			nextObjects = append(nextObjects, nestedMetadata)
