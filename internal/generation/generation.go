@@ -22,6 +22,7 @@ type gcMetadata struct {
 	cyclicallyReferenced bool
 	referenceCount       uint // founded references (not all)
 	finalized            atomic.Bool
+	arena                *limited_arena.LimitedArena
 }
 
 // finalized || (cyclicallyReferenced && referenceCount == 0) ==> dead object

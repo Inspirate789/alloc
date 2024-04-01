@@ -12,32 +12,39 @@ type holder[T any] interface {
 
 type allocateFunc[H holder[T], T any] func(*limited_arena.LimitedArena) (H, bool)
 
-func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H, T]) (ptr H, controllable bool) {
+type allocatedObject[T any, H holder[T]] struct {
+	container    H
+	controllable bool
+	arena        *limited_arena.LimitedArena
+}
+
+func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H, T]) allocatedObject[T, H] {
+	var object allocatedObject[T, H]
 	for _, arena := range gen.arenas {
-		ptr, controllable = allocateObject(&arena)
-		if ptr != nil {
+		object.container, object.controllable = allocateObject(&arena)
+		if object.container != nil {
 			break
 		}
 	}
-	if ptr == nil {
+	if object.container == nil {
 		arena := limited_arena.NewLimitedArena()
-		ptr, controllable = allocateObject(&arena)
+		object.container, object.controllable = allocateObject(&arena)
 		gen.arenas = append(gen.arenas, arena)
 	}
 
-	return ptr, controllable
+	return object
 }
 
 func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
-	ptr, controllable := allocate[T](gen, limited_arena.New[T])
+	object := allocate[T](gen, limited_arena.New[T])
 
 	metadata := objectMetadata{
-		address:      unsafe.Pointer(ptr),
-		typeInfo:     reflect.TypeOf(*ptr),
-		controllable: controllable,
+		address:      unsafe.Pointer(object.container),
+		typeInfo:     reflect.TypeOf(*object.container),
+		controllable: object.controllable,
 	}
 
-	if !controllable {
+	if !object.controllable {
 		gen.uncontrollableAddresses.Add(&metadata)
 	} else {
 		metadata.controllable = true
@@ -64,21 +71,21 @@ func makeSliceFromPtr[T any](ptr unsafe.Pointer, len, cap int) []T {
 }
 
 func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
-	slice, controllable := allocate[T](gen, func(arena *limited_arena.LimitedArena) ([]T, bool) {
+	object := allocate[T](gen, func(arena *limited_arena.LimitedArena) ([]T, bool) {
 		return limited_arena.MakeSlice[T](arena, len, cap)
 	})
 
 	metadata := SliceMetadata{
 		objectMetadata: objectMetadata{
-			address:      unsafe.Pointer(&slice[0]),
-			typeInfo:     reflect.TypeOf(slice),
-			controllable: controllable,
+			address:      unsafe.Pointer(&object.container[0]),
+			typeInfo:     reflect.TypeOf(object.container),
+			controllable: object.controllable,
 		},
 		len: len,
 		cap: cap,
 	}
 
-	if !controllable {
+	if !object.controllable {
 		gen.uncontrollableSlices.Add(&metadata)
 	} else {
 		metadata.controllable = true
