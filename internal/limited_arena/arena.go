@@ -8,8 +8,8 @@ import (
 	"unsafe"
 )
 
-// LimitedArena implements a size limit on the arena.Arena
-type LimitedArena struct {
+// Arena implements a size limit on the arena.Arena
+type Arena struct {
 	arena *arena.Arena
 	free  uintptr
 }
@@ -54,8 +54,8 @@ const (
 )
 
 // NewLimitedArena allocates a new arena.
-func NewLimitedArena() LimitedArena {
-	return LimitedArena{
+func NewLimitedArena() Arena {
+	return Arena{
 		arena: arena.NewArena(),
 		free:  userArenaChunkBytes,
 	}
@@ -66,7 +66,7 @@ func NewLimitedArena() LimitedArena {
 // collection overhead. Applications must not call any method on this
 // arena after it has been freed. If there is not enough space in the arena,
 // nil will be returned.
-func (a LimitedArena) Free() {
+func (a Arena) Free() {
 	a.arena.Free()
 }
 
@@ -78,7 +78,7 @@ func sizeOf[T any]() uintptr {
 // the arena is freed. Accessing the value after free may result in a fault,
 // but this fault is also not guaranteed. If there is not enough space in
 // the arena, nil will be returned.
-func New[T any](a *LimitedArena) (ptr *T, controllable bool) {
+func New[T any](a *Arena) (ptr *T, controllable bool) {
 	size := sizeOf[T]()
 	if size > userArenaChunkMaxAllocBytes {
 		// WARN: the allocation will occur outside arena, i.e. in heap (from go/src/runtime/arena.go)
@@ -94,7 +94,7 @@ func New[T any](a *LimitedArena) (ptr *T, controllable bool) {
 // MakeSlice creates a new []T with the provided capacity and length. The []T must
 // not be used after the arena is freed. Accessing the underlying storage of the
 // slice after free may result in a fault, but this fault is also not guaranteed.
-func MakeSlice[T any](a *LimitedArena, len, cap int) (slice []T, controllable bool) {
+func MakeSlice[T any](a *Arena, len, cap int) (slice []T, controllable bool) {
 	size := sizeOf[T]() * uintptr(cap)
 	if size > userArenaChunkMaxAllocBytes {
 		// WARN: the allocation will occur outside arena, i.e. in heap (from go/src/runtime/arena.go)

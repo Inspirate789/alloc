@@ -1,7 +1,9 @@
 package generation
 
 import (
+	"github.com/Inspirate789/alloc/internal/limited_arena"
 	"runtime"
+	"slices"
 	"sync"
 	"unsafe"
 )
@@ -76,4 +78,57 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 	wg.Wait()
 }
 
-// TODO: move and compact
+// (cyclicallyReferenced && referenceCount == 0) || finalized ==> dead object
+func isGarbage(object *objectMetadata) bool {
+	return (object.cyclicallyReferenced && object.referenceCount == 0) || object.finalized.Load() // TODO: use && instead of || ?
+}
+
+func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
+	arenaObjectsCount := make(map[*limited_arena.Arena]int, len(gen.arenas))
+	garbageObjectsCount := make(map[*limited_arena.Arena]int, len(gen.arenas))
+
+	gen.addresses.Map(func(object *objectMetadata) {
+		arenaObjectsCount[object.arena]++
+		if isGarbage(object) {
+			garbageObjectsCount[object.arena]++
+		}
+	})
+
+	gen.slices.Map(func(object *SliceMetadata) {
+		arenaObjectsCount[object.arena]++
+		if isGarbage(&object.objectMetadata) {
+			garbageObjectsCount[object.arena]++
+		}
+	})
+
+	garbageArenas := make([]*limited_arena.Arena, 0)
+	for arena, count := range arenaObjectsCount {
+		if garbageObjectsCount[arena] == count && count != 0 {
+			garbageArenas = append(garbageArenas, arena)
+		}
+	}
+
+	return garbageArenas
+}
+
+func (gen *Generation) Compact() bool {
+	garbageArenas := gen.detectGarbageArenas()
+	if len(garbageArenas) == 0 {
+		return false
+	}
+
+	for offset, arena := range garbageArenas { // TODO: lock generation?
+		index := slices.Index(gen.arenas, *arena)
+		if index == -1 {
+			panic("unknown arena") // TODO: remove
+		}
+		tailIndex := len(gen.arenas) - offset - 1
+		gen.arenas[index] = gen.arenas[tailIndex]
+		gen.arenas[tailIndex].Free()
+		gen.arenas[tailIndex] = limited_arena.Arena{}
+	}
+
+	gen.arenas = gen.arenas[:len(gen.arenas)-len(garbageArenas)]
+
+	return true
+}

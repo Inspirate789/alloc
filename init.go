@@ -10,11 +10,11 @@ func init() {
 	mainHypervisor = hypervisor{
 		mem: memory{
 			movingGenerations: []*generation.Generation{
-				generation.NewGeneration(true), // young
-				generation.NewGeneration(true), // middle
-				generation.NewGeneration(true), // old
+				generation.NewGeneration(), // young
+				generation.NewGeneration(), // middle
+				generation.NewGeneration(), // old
 			},
-			largeObjectGeneration: generation.NewGeneration(false),
+			largeObjectGeneration: generation.NewGeneration(),
 		},
 	}
 

@@ -20,17 +20,16 @@ type addressContainer[V any] interface {
 type gcMetadata struct {
 	lastMarkID           uint64
 	cyclicallyReferenced bool
-	referenceCount       uint // founded references (not all)
+	referenceCount       uint // founded references (not all) // TODO: drop to 0 on start new collection (on mark when object with old lastMarkID appears for the first time)
 	finalized            atomic.Bool
-	arena                *limited_arena.LimitedArena
+	arena                *limited_arena.Arena
 }
 
-// finalized || (cyclicallyReferenced && referenceCount == 0) ==> dead object
 type objectMetadata struct {
 	sync.RWMutex
 	address      unsafe.Pointer
 	typeInfo     reflect.Type
-	controllable bool
+	controllable bool // TODO: remove?
 	gcMetadata
 }
 
@@ -48,18 +47,16 @@ type SliceMetadata struct {
 }
 
 type Generation struct {
-	movingObjects           bool
-	arenas                  []limited_arena.LimitedArena
+	arenas                  []limited_arena.Arena
 	addresses               addressContainer[*objectMetadata]
 	uncontrollableAddresses addressContainer[*objectMetadata]
 	slices                  addressContainer[*SliceMetadata]
 	uncontrollableSlices    addressContainer[*SliceMetadata]
 }
 
-func NewGeneration(movingObjects bool) *Generation {
+func NewGeneration() *Generation {
 	return &Generation{
-		movingObjects:           movingObjects,
-		arenas:                  []limited_arena.LimitedArena{limited_arena.NewLimitedArena()},
+		arenas:                  []limited_arena.Arena{limited_arena.NewLimitedArena()},
 		addresses:               metadata_container.NewAddressMap[*objectMetadata](),
 		uncontrollableAddresses: metadata_container.NewAddressMap[*objectMetadata](),
 		slices:                  metadata_container.NewAddressMap[*SliceMetadata](),

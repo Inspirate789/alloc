@@ -10,12 +10,12 @@ type holder[T any] interface {
 	*T | []T
 }
 
-type allocateFunc[H holder[T], T any] func(*limited_arena.LimitedArena) (H, bool)
+type allocateFunc[H holder[T], T any] func(*limited_arena.Arena) (H, bool)
 
 type allocatedObject[T any, H holder[T]] struct {
 	container    H
 	controllable bool
-	arena        *limited_arena.LimitedArena
+	arena        *limited_arena.Arena
 }
 
 func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H, T]) allocatedObject[T, H] {
@@ -71,7 +71,7 @@ func makeSliceFromPtr[T any](ptr unsafe.Pointer, len, cap int) []T {
 }
 
 func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
-	object := allocate[T](gen, func(arena *limited_arena.LimitedArena) ([]T, bool) {
+	object := allocate[T](gen, func(arena *limited_arena.Arena) ([]T, bool) {
 		return limited_arena.MakeSlice[T](arena, len, cap)
 	})
 
