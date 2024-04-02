@@ -27,9 +27,8 @@ type gcMetadata struct {
 
 type objectMetadata struct {
 	sync.RWMutex
-	address      unsafe.Pointer
-	typeInfo     reflect.Type
-	controllable bool // TODO: remove?
+	address  unsafe.Pointer
+	typeInfo reflect.Type
 	gcMetadata
 }
 
