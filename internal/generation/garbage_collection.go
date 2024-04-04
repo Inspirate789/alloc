@@ -10,7 +10,7 @@ import (
 
 var gcMarkConcurrency = (runtime.NumCPU() + 1) / 2
 
-func (gen *Generation) searchMetadata(addr unsafe.Pointer) (metadata *objectMetadata, exist bool) {
+func (gen *Generation) SearchObject(addr unsafe.Pointer) (metadata *objectMetadata, exist bool) {
 	metadata, exist = gen.addresses.Search(addr)
 	if !exist {
 		var sliceMetadata *SliceMetadata
@@ -34,21 +34,13 @@ func (gen *Generation) searchMetadata(addr unsafe.Pointer) (metadata *objectMeta
 
 type SearchFunc func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool)
 
-func (gen *Generation) SearchObjectFunc() SearchFunc {
-	return gen.searchMetadata
-}
-
 func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
-	if searchMetadata == nil {
-		searchMetadata = gen.searchMetadata
-	} else {
-		searchMetadata = func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool) {
-			metadata, exist = gen.searchMetadata(addr)
-			if !exist {
-				metadata, exist = searchMetadata(addr)
-			}
-			return
+	searchMetadata = func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool) {
+		metadata, exist = gen.SearchObject(addr)
+		if !exist {
+			metadata, exist = searchMetadata(addr)
 		}
+		return
 	}
 
 	objects := make(chan *objectMetadata)
