@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"runtime/debug"
 	"sync"
+	"time"
 )
 
 type gcState struct {
@@ -36,6 +37,7 @@ func (h *hypervisor) run() {
 				h.gc()
 			}
 		}
+		Debugger.arenasAllocated.Add(1)
 	}
 }
 
@@ -51,7 +53,7 @@ func mergeSearchFunctions[F ~func(K) (V, bool), K comparable, V any](functions [
 	}
 }
 
-func (h *hypervisor) mergeGenerations(sizesBefore, sizesAfter []int) {
+func (h *hypervisor) mergeGenerations(sizesBefore, sizesAfter []int) { // TODO: fill debugger.arenasFreed
 	// TODO
 }
 
@@ -62,7 +64,7 @@ func gogc() int {
 	return percent
 }
 
-func (h *hypervisor) calculateNewHeapTarget() { // TODO: fill debug stats
+func (h *hypervisor) calculateNewHeapTarget() {
 	sizes := make([]int, len(h.mem.movingGenerations)+1)
 
 	for i := range h.mem.movingGenerations {
@@ -124,10 +126,16 @@ func (h *hypervisor) gc() {
 func GC() {
 	if mainHypervisor.gcLock.TryLock() {
 		mainHypervisor.gc()
+
 		ctx, cancel := context.WithCancel(context.Background())
 		mainHypervisor.gcCancel()
 		mainHypervisor.gcCancel = cancel
+
+		Debugger.numCC.Add(1)
+		Debugger.lastCC.Store(time.Now().Unix())
+
 		mainHypervisor.gcLock.Unlock()
+
 		mainHypervisor.gcCtx = ctx
 	} else {
 		<-mainHypervisor.gcCtx.Done()

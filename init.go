@@ -6,7 +6,7 @@ import (
 
 var mainHypervisor *hypervisor
 
-func init() { // TODO: init GC state and channel
+func init() { // TODO: init GC state, channel and debugger.arenasAllocated
 	mainHypervisor = &hypervisor{
 		mem: memory{
 			movingGenerations: []*generation.Generation{
