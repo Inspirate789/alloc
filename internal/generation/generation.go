@@ -67,3 +67,7 @@ func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *Slice
 	metadata, exist = gen.slices.Search(slicePtr)
 	return
 }
+
+func (gen *Generation) Size() int {
+	return len(gen.arenas) // TODO: locks
+}

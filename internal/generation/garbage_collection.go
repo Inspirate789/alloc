@@ -103,10 +103,12 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 	return garbageArenas
 }
 
-func (gen *Generation) Compact() bool {
+func (gen *Generation) Compact() (int, int) {
+	before := len(gen.arenas)
+
 	garbageArenas := gen.detectGarbageArenas()
 	if len(garbageArenas) == 0 {
-		return false
+		return before, before
 	}
 
 	for offset, arena := range garbageArenas { // TODO: lock generation?
@@ -122,5 +124,5 @@ func (gen *Generation) Compact() bool {
 
 	gen.arenas = gen.arenas[:len(gen.arenas)-len(garbageArenas)]
 
-	return true
+	return before, before - len(garbageArenas)
 }
