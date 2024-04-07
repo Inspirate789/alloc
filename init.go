@@ -16,6 +16,7 @@ var mainHypervisor *hypervisor
 func init() {
 	ctx, cancel := context.WithCancel(context.Background())
 	arenaSignals := make(chan struct{}, arenaSignalsQueueLen)
+
 	mainHypervisor = &hypervisor{
 		gcCtx:        ctx,
 		gcCancel:     cancel,
@@ -27,13 +28,14 @@ func init() {
 		},
 		mem: memory{
 			movingGenerations: []*generation.Generation{
-				generation.NewGeneration(), // young
-				generation.NewGeneration(), // middle
-				generation.NewGeneration(), // old
+				generation.NewGeneration(arenaSignals), // young
+				generation.NewGeneration(arenaSignals), // middle
+				generation.NewGeneration(arenaSignals), // old
 			},
-			largeObjectGeneration: generation.NewGeneration(),
+			largeObjectGeneration: generation.NewGeneration(arenaSignals),
 		},
 	}
+
 	Debugger.arenasAllocated.Store(3)
 
 	go mainHypervisor.run()

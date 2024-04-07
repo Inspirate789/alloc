@@ -47,15 +47,17 @@ type SliceMetadata struct {
 
 type Generation struct {
 	arenas                  []limited_arena.Arena
+	arenaSignals            chan<- struct{}
 	addresses               addressContainer[*objectMetadata]
 	uncontrollableAddresses addressContainer[*objectMetadata]
 	slices                  addressContainer[*SliceMetadata]
 	uncontrollableSlices    addressContainer[*SliceMetadata]
 }
 
-func NewGeneration() *Generation {
+func NewGeneration(arenaSignals chan<- struct{}) *Generation {
 	return &Generation{
 		arenas:                  []limited_arena.Arena{limited_arena.NewLimitedArena()},
+		arenaSignals:            arenaSignals,
 		addresses:               metadata_container.NewAddressMap[*objectMetadata](),
 		uncontrollableAddresses: metadata_container.NewAddressMap[*objectMetadata](),
 		slices:                  metadata_container.NewAddressMap[*SliceMetadata](),

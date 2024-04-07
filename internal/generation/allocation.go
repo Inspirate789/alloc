@@ -28,6 +28,7 @@ func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H
 	}
 	if object.container == nil {
 		arena := limited_arena.NewLimitedArena()
+		gen.arenaSignals <- struct{}{}
 		object.container, object.controllable = allocateObject(&arena)
 		gen.arenas = append(gen.arenas, arena)
 	}
