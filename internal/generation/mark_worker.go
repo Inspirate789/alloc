@@ -12,6 +12,7 @@ type markWorker struct {
 }
 
 func (mw markWorker) markObject(object *objectMetadata) (skip bool) {
+	object.referenceCount++
 	if object.lastMarkID == mw.gcID && mw.visited[object.address] {
 		object.cyclicallyReferenced = true
 		return true
@@ -80,6 +81,7 @@ func (mw markWorker) processObject(object *objectMetadata) {
 
 func (mw markWorker) mark(objects <-chan *objectMetadata) {
 	for object := range objects {
+		object.referenceCount = -1
 		mw.processObject(object)
 	}
 }

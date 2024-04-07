@@ -21,7 +21,7 @@ type addressContainer[V any] interface {
 type gcMetadata struct {
 	lastMarkID           uint64
 	cyclicallyReferenced bool
-	referenceCount       uint // founded references (not all) // TODO: drop to 0 on start new collection (on mark when object with old lastMarkID appears for the first time)
+	referenceCount       uint // founded references (not all)
 	finalized            atomic.Bool
 	arena                *limited_arena.Arena
 }
