@@ -14,6 +14,7 @@ type addressContainer[V any] interface {
 	Search(addr unsafe.Pointer) (value V, exist bool)
 	Move(old unsafe.Pointer, new unsafe.Pointer)
 	Map(func(value V))
+	MoveTo(container any)
 	Delete(addr unsafe.Pointer)
 }
 
@@ -72,4 +73,13 @@ func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *Slice
 
 func (gen *Generation) Size() int {
 	return len(gen.arenas) // TODO: locks
+}
+
+func (gen *Generation) MoveTo(dst *Generation) { // TODO: locks
+	dst.arenas = append(dst.arenas, gen.arenas...)
+	gen.arenas = gen.arenas[:0] // TODO: create new arena ?
+	gen.addresses.MoveTo(dst.addresses)
+	gen.slices.MoveTo(dst.slices)
+	gen.uncontrollableAddresses.MoveTo(dst.uncontrollableAddresses)
+	gen.uncontrollableSlices.MoveTo(dst.uncontrollableSlices)
 }

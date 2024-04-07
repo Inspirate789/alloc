@@ -7,7 +7,7 @@ type debugger struct {
 	lastCC          atomic.Int64 // CC - Cycle Collection
 	numCC           atomic.Uint64
 	arenasAllocated atomic.Uint64
-	arenasFreed     atomic.Uint64
+	arenasFreed     atomic.Int64
 }
 
 var Debugger = debugger{}

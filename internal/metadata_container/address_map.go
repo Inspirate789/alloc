@@ -1,6 +1,9 @@
 package metadata_container
 
-import "unsafe"
+import (
+	"maps"
+	"unsafe"
+)
 
 type address interface {
 	Address() unsafe.Pointer
@@ -33,6 +36,12 @@ func (am AddressMap[V]) Map(f func(value V)) {
 	for _, val := range am {
 		f(val)
 	}
+}
+
+func (am AddressMap[V]) MoveTo(container any) {
+	dst := container.(AddressMap[V]) // avoid?
+	maps.Copy(dst, am)
+	clear(am)
 }
 
 func (am AddressMap[V]) Delete(addr unsafe.Pointer) {

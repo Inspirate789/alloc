@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const arenaMovementThreshold = 0.1
+
 type gcState struct {
 	lastCollectedGenerations int
 	curHeapSize              int
@@ -53,8 +55,16 @@ func mergeSearchFunctions[F ~func(K) (V, bool), K comparable, V any](functions [
 	}
 }
 
-func (h *hypervisor) mergeGenerations(sizesBefore, sizesAfter []int) { // TODO: fill debugger.arenasFreed
-	// TODO
+func (h *hypervisor) mergeGenerations(sizesBefore, sizesAfter []int) {
+	for i := len(sizesBefore) - 3; i >= 0; i-- { // len(sizesBefore) == len(sizesAfter)
+		sizeDiff := sizesBefore[i] - sizesAfter[i]
+		if float64(sizeDiff)/float64(sizesBefore[i]) >= arenaMovementThreshold {
+			h.mem.movingGenerations[i].MoveTo(h.mem.movingGenerations[i+1])
+		}
+		if sizeDiff != 0 {
+			Debugger.arenasFreed.Add(int64(sizeDiff))
+		}
+	}
 }
 
 func gogc() int {
