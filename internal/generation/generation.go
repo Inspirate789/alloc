@@ -76,8 +76,10 @@ func (gen *Generation) Size() int {
 }
 
 func (gen *Generation) MoveTo(dst *Generation) { // TODO: locks
-	dst.arenas = append(dst.arenas, gen.arenas...)
-	gen.arenas = gen.arenas[:0] // TODO: create new arena ?
+	gen.arenas[len(gen.arenas)-1], gen.arenas[0] = gen.arenas[0], gen.arenas[len(gen.arenas)-1]
+	dst.arenas = append(dst.arenas, gen.arenas[1:]...)
+	gen.arenas = gen.arenas[:1]
+
 	gen.addresses.MoveTo(dst.addresses)
 	gen.slices.MoveTo(dst.slices)
 	gen.uncontrollableAddresses.MoveTo(dst.uncontrollableAddresses)
