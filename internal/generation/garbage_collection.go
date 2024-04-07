@@ -113,9 +113,9 @@ func (gen *Generation) Compact() (int, int) {
 
 	for offset, arena := range garbageArenas { // TODO: lock generation?
 		index := slices.Index(gen.arenas, *arena)
-		if index == -1 {
-			panic("unknown arena") // TODO: remove
-		}
+		//if index == -1 {
+		//	panic("unknown arena")
+		//}
 		tailIndex := len(gen.arenas) - offset - 1
 		gen.arenas[index] = gen.arenas[tailIndex]
 		gen.arenas[tailIndex].Free()

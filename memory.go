@@ -43,7 +43,7 @@ func appendSlice[T any](mem memory, slice []T, elems ...T) {
 	if !exist {
 		metadata, exist = mem.largeObjectGeneration.SearchSliceData(slicePtr)
 		if !exist {
-			panic("slice data not found in memory") // TODO: remove
+			panic("slice data not found in memory")
 		}
 	}
 
