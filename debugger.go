@@ -17,7 +17,7 @@ type AllocStats struct {
 	LastCC          int64 // CC - Cycle Collection
 	NumCC           uint64
 	ArenasAllocated uint64
-	ArenasFreed     uint64
+	ArenasFreed     int64
 }
 
 func (d *debugger) ReadAllocStats(stats *AllocStats) {

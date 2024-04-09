@@ -113,7 +113,7 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 	return garbageArenas
 }
 
-func (gen *Generation) Compact() (int, int) {
+func (gen *Generation) Sweep() (int, int) {
 	sizeBefore := len(gen.arenas)
 
 	garbageArenas := gen.detectGarbageArenas()

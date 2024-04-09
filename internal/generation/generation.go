@@ -20,7 +20,7 @@ type addressContainer[V any] interface {
 type gcMetadata struct {
 	lastMarkID           uint64
 	cyclicallyReferenced bool
-	referenceCount       uint // founded references (not all)
+	referenceCount       int // founded references (not all)
 	finalized            atomic.Bool
 	arena                *limited_arena.Arena
 }

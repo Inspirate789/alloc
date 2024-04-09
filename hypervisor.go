@@ -113,7 +113,7 @@ func (h *hypervisor) gc() {
 		wg.Add(1)
 		go func() {
 			generations[i].Mark(gcID, searchFunc)
-			sizesBefore[i], sizesAfter[i] = generations[i].Compact()
+			sizesBefore[i], sizesAfter[i] = generations[i].Sweep()
 			wg.Done()
 		}()
 	}
