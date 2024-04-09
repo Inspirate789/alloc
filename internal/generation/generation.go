@@ -14,7 +14,7 @@ type addressContainer[V any] interface {
 	Search(addr unsafe.Pointer) (value V, exist bool)
 	Map(func(value V))
 	MoveTo(container any)
-	Delete(addr unsafe.Pointer)
+	Delete(addresses []unsafe.Pointer)
 }
 
 type gcMetadata struct {

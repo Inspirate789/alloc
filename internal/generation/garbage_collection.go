@@ -79,10 +79,14 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 	arenaObjectsCount := make(map[*limited_arena.Arena]int, len(gen.arenas))
 	garbageObjectsCount := make(map[*limited_arena.Arena]int, len(gen.arenas))
 
+	garbageAddresses := make([]unsafe.Pointer, 0)
+	garbageSlices := make([]unsafe.Pointer, 0)
+
 	gen.addresses.Map(func(object *objectMetadata) {
 		arenaObjectsCount[object.arena]++
 		if isGarbage(object) {
 			garbageObjectsCount[object.arena]++
+			garbageAddresses = append(garbageAddresses, object.address)
 		}
 	})
 
@@ -90,6 +94,7 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 		arenaObjectsCount[object.arena]++
 		if isGarbage(&object.objectMetadata) {
 			garbageObjectsCount[object.arena]++
+			garbageSlices = append(garbageSlices, object.address)
 		}
 	})
 
@@ -100,15 +105,20 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 		}
 	}
 
+	go func() {
+		gen.addresses.Delete(garbageAddresses)
+		gen.slices.Delete(garbageSlices)
+	}()
+
 	return garbageArenas
 }
 
 func (gen *Generation) Compact() (int, int) {
-	before := len(gen.arenas)
+	sizeBefore := len(gen.arenas)
 
 	garbageArenas := gen.detectGarbageArenas()
 	if len(garbageArenas) == 0 {
-		return before, before
+		return sizeBefore, sizeBefore
 	}
 
 	for offset, arena := range garbageArenas { // TODO: lock generation?
@@ -124,5 +134,5 @@ func (gen *Generation) Compact() (int, int) {
 
 	gen.arenas = gen.arenas[:len(gen.arenas)-len(garbageArenas)]
 
-	return before, before - len(garbageArenas)
+	return sizeBefore, sizeBefore - len(garbageArenas)
 }

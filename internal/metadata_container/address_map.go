@@ -9,7 +9,7 @@ type address interface {
 	Address() unsafe.Pointer
 }
 
-// AddressMap TODO: add RWMutex?
+// AddressMap TODO: add RWMutex
 type AddressMap[V address] map[unsafe.Pointer]V
 
 func NewAddressMap[V address]() AddressMap[V] {
@@ -39,6 +39,8 @@ func (am AddressMap[V]) MoveTo(container any) {
 	clear(am)
 }
 
-func (am AddressMap[V]) Delete(addr unsafe.Pointer) {
-	delete(am, addr)
+func (am AddressMap[V]) Delete(addresses []unsafe.Pointer) {
+	for _, addr := range addresses {
+		delete(am, addr)
+	}
 }
