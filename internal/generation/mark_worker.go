@@ -12,6 +12,10 @@ type markWorker struct {
 }
 
 func (mw markWorker) markObject(object *objectMetadata) (skip bool) {
+	if object.finalized.Load() {
+		return true
+	}
+
 	object.referenceCount++
 	if object.lastMarkID == mw.gcID && mw.visited[object.address] {
 		object.cyclicallyReferenced = true
