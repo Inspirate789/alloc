@@ -27,11 +27,6 @@ func (am AddressMap[V]) Search(addr unsafe.Pointer) (value V, exist bool) {
 	return
 }
 
-func (am AddressMap[V]) Move(old unsafe.Pointer, new unsafe.Pointer) {
-	am[new] = am[old]
-	delete(am, old)
-}
-
 func (am AddressMap[V]) Map(f func(value V)) {
 	for _, val := range am {
 		f(val)

@@ -12,7 +12,6 @@ import (
 type addressContainer[V any] interface {
 	Add(value V)
 	Search(addr unsafe.Pointer) (value V, exist bool)
-	Move(old unsafe.Pointer, new unsafe.Pointer)
 	Map(func(value V))
 	MoveTo(container any)
 	Delete(addr unsafe.Pointer)
