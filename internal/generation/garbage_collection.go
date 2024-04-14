@@ -72,7 +72,7 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 
 // (cyclicallyReferenced && referenceCount <= 1) || finalized ==> dead object
 func isGarbage(object *objectMetadata) bool {
-	return (object.cyclicallyReferenced && object.referenceCount <= 1) || object.finalized.Load()
+	return (object.cycleReferenceSource != nil && object.referenceCount <= 1) || object.finalized.Load()
 }
 
 func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {

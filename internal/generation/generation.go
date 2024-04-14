@@ -18,11 +18,12 @@ type addressContainer[V any] interface {
 }
 
 type gcMetadata struct {
-	lastMarkID           uint64
-	cyclicallyReferenced bool
-	referenceCount       int // founded references (not all)
-	finalized            atomic.Bool
-	arena                *limited_arena.Arena
+	lastMarkID              uint64
+	cycleReferenceSource    *objectMetadata
+	cycleReferenceCompleted bool
+	referenceCount          int // founded references (not all)
+	finalized               atomic.Bool
+	arena                   *limited_arena.Arena
 }
 
 type objectMetadata struct {

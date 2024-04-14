@@ -18,7 +18,7 @@ func (mw markWorker) markObject(object *objectMetadata) (skip bool) {
 
 	object.referenceCount++
 	if object.lastMarkID == mw.gcID && mw.visited[object.address] {
-		object.cyclicallyReferenced = true
+		object.cycleReferenceSource = object
 		return true
 	} else {
 		object.lastMarkID = mw.gcID
@@ -75,6 +75,12 @@ func (mw markWorker) processObject(object *objectMetadata) {
 		object.Unlock()
 		for _, nextObject := range nextObjects {
 			mw.processObject(nextObject)
+			delete(mw.visited, nextObject.address)
+			if nextObject.cycleReferenceSource == object {
+				object.cycleReferenceCompleted = true
+			} else if nextObject.cycleReferenceSource != nil && !nextObject.cycleReferenceCompleted {
+				object.cycleReferenceSource = nextObject.cycleReferenceSource
+			}
 		}
 	} else {
 		object.Unlock()
