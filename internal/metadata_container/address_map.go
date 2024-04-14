@@ -46,10 +46,15 @@ func (ac AddressContainer[V]) Map(f func(value V)) {
 }
 
 func (ac AddressContainer[V]) MoveTo(container any) {
+	dst := container.(AddressContainer[V]) // avoid?
+
 	ac.lock.Lock()
-	dst := container.(addressMap[V]) // avoid?
-	maps.Copy(dst, ac.addressMap)
+	dst.lock.Lock()
+
+	maps.Copy(dst.addressMap, ac.addressMap)
 	clear(ac.addressMap)
+
+	dst.lock.Unlock()
 	ac.lock.Unlock()
 }
 

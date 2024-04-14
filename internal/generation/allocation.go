@@ -19,6 +19,7 @@ type allocatedObject[T any, H holder[T]] struct {
 }
 
 func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H, T]) allocatedObject[T, H] {
+	gen.arenasMx.Lock()
 	var object allocatedObject[T, H]
 	for _, arena := range gen.arenas {
 		object.container, object.controllable = allocateObject(&arena)
@@ -32,6 +33,7 @@ func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H
 		object.container, object.controllable = allocateObject(&arena)
 		gen.arenas = append(gen.arenas, arena)
 	}
+	gen.arenasMx.Unlock()
 
 	return object
 }

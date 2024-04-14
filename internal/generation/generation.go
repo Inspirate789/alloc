@@ -47,6 +47,7 @@ type SliceMetadata struct {
 }
 
 type Generation struct {
+	arenasMx                sync.RWMutex
 	arenas                  []limited_arena.Arena
 	arenaSignals            chan<- struct{}
 	addresses               addressContainer[*objectMetadata]
@@ -72,13 +73,22 @@ func (gen *Generation) SearchSliceData(slicePtr unsafe.Pointer) (metadata *Slice
 }
 
 func (gen *Generation) Size() int {
-	return len(gen.arenas) // TODO: locks
+	gen.arenasMx.RLock()
+	size := len(gen.arenas)
+	gen.arenasMx.RUnlock()
+	return size
 }
 
-func (gen *Generation) MoveTo(dst *Generation) { // TODO: locks
+func (gen *Generation) MoveTo(dst *Generation) {
+	gen.arenasMx.Lock()
+	dst.arenasMx.Lock()
+
 	gen.arenas[len(gen.arenas)-1], gen.arenas[0] = gen.arenas[0], gen.arenas[len(gen.arenas)-1]
 	dst.arenas = append(dst.arenas, gen.arenas[1:]...)
 	gen.arenas = gen.arenas[:1]
+
+	dst.arenasMx.Unlock()
+	gen.arenasMx.Unlock()
 
 	gen.addresses.MoveTo(dst.addresses)
 	gen.slices.MoveTo(dst.slices)

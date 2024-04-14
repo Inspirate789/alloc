@@ -133,6 +133,8 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 }
 
 func (gen *Generation) Sweep() (int, int) {
+	gen.arenasMx.Lock()
+
 	sizeBefore := len(gen.arenas)
 
 	garbageArenas := gen.detectGarbageArenas()
@@ -152,6 +154,8 @@ func (gen *Generation) Sweep() (int, int) {
 	}
 
 	gen.arenas = gen.arenas[:len(gen.arenas)-len(garbageArenas)]
+
+	gen.arenasMx.Unlock()
 
 	return sizeBefore, sizeBefore - len(garbageArenas)
 }
