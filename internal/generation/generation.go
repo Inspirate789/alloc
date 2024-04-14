@@ -59,10 +59,10 @@ func NewGeneration(arenaSignals chan<- struct{}) *Generation {
 	return &Generation{
 		arenas:                  []limited_arena.Arena{limited_arena.NewLimitedArena()},
 		arenaSignals:            arenaSignals,
-		addresses:               metadata_container.NewAddressMap[*objectMetadata](),
-		uncontrollableAddresses: metadata_container.NewAddressMap[*objectMetadata](),
-		slices:                  metadata_container.NewAddressMap[*SliceMetadata](),
-		uncontrollableSlices:    metadata_container.NewAddressMap[*SliceMetadata](),
+		addresses:               metadata_container.NewAddressContainer[*objectMetadata](),
+		uncontrollableAddresses: metadata_container.NewAddressContainer[*objectMetadata](),
+		slices:                  metadata_container.NewAddressContainer[*SliceMetadata](),
+		uncontrollableSlices:    metadata_container.NewAddressContainer[*SliceMetadata](),
 	}
 }
 

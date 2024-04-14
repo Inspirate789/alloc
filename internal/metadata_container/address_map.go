@@ -2,6 +2,7 @@ package metadata_container
 
 import (
 	"maps"
+	"sync"
 	"unsafe"
 )
 
@@ -9,38 +10,53 @@ type address interface {
 	Address() unsafe.Pointer
 }
 
-// AddressMap TODO: add RWMutex
-type AddressMap[V address] map[unsafe.Pointer]V
+type addressMap[V address] map[unsafe.Pointer]V
 
-func NewAddressMap[V address]() AddressMap[V] {
-	return make(AddressMap[V])
+type AddressContainer[V address] struct {
+	addressMap[V]
+	lock *sync.RWMutex
 }
 
-// TODO: lock on search
-
-func (am AddressMap[V]) Add(value V) {
-	am[value.Address()] = value
+func NewAddressContainer[V address]() AddressContainer[V] {
+	return AddressContainer[V]{
+		addressMap: make(addressMap[V]),
+		lock:       new(sync.RWMutex),
+	}
 }
 
-func (am AddressMap[V]) Search(addr unsafe.Pointer) (value V, exist bool) {
-	value, exist = am[addr]
+func (ac AddressContainer[V]) Add(value V) {
+	ac.lock.Lock()
+	ac.addressMap[value.Address()] = value
+	ac.lock.Unlock()
+}
+
+func (ac AddressContainer[V]) Search(addr unsafe.Pointer) (value V, exist bool) {
+	ac.lock.RLock()
+	value, exist = ac.addressMap[addr]
+	ac.lock.RUnlock()
 	return
 }
 
-func (am AddressMap[V]) Map(f func(value V)) {
-	for _, val := range am {
+func (ac AddressContainer[V]) Map(f func(value V)) {
+	ac.lock.RLock()
+	for _, val := range ac.addressMap {
 		f(val)
 	}
+	ac.lock.RUnlock()
 }
 
-func (am AddressMap[V]) MoveTo(container any) {
-	dst := container.(AddressMap[V]) // avoid?
-	maps.Copy(dst, am)
-	clear(am)
+func (ac AddressContainer[V]) MoveTo(container any) {
+	ac.lock.Lock()
+	dst := container.(addressMap[V]) // avoid?
+	maps.Copy(dst, ac.addressMap)
+	clear(ac.addressMap)
+	ac.lock.Unlock()
 }
 
-func (am AddressMap[V]) Delete(addresses []unsafe.Pointer) {
+func (ac AddressContainer[V]) Delete(addresses []unsafe.Pointer) {
+	ac.lock.Lock()
 	for _, addr := range addresses {
-		delete(am, addr)
+		delete(ac.addressMap, addr)
 	}
+	ac.lock.Unlock()
 }

@@ -108,7 +108,7 @@ func (h *hypervisor) gc() {
 	sizesBefore := make([]int, len(generations))
 	sizesAfter := make([]int, len(generations))
 	for i := 0; i < generationsCount; i++ {
-		i := i // TODO: remove
+		i := i // remove?
 		wg.Add(1)
 		go func() {
 			generations[i].Mark(gcID, searchFunc)
