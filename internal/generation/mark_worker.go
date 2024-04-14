@@ -2,6 +2,7 @@ package generation
 
 import (
 	"reflect"
+	"slices"
 	"unsafe"
 )
 
@@ -27,15 +28,29 @@ func (mw markWorker) markObject(object *objectMetadata) (skip bool) {
 	}
 }
 
+func containerTypes() [6]reflect.Kind {
+	return [6]reflect.Kind{
+		reflect.Pointer, reflect.Interface, reflect.Array, reflect.Slice, reflect.Map, reflect.Struct,
+	}
+}
+
 func (mw markWorker) extractNestedObjects(object reflect.Value) (nestedObjects []reflect.Value) {
 	switch object.Kind() {
 	case reflect.Pointer, reflect.Interface:
 		nestedObjects = []reflect.Value{object.Elem()}
 	case reflect.Array, reflect.Slice:
+		containerTypes := containerTypes()
+		if object.Len() != 0 && !slices.Contains(containerTypes[:], object.Index(0).Kind()) {
+			break
+		}
 		for i := 0; i < object.Len(); i++ {
 			nestedObjects = append(nestedObjects, object.Index(i))
 		}
 	case reflect.Map:
+		containerTypes := containerTypes()
+		if object.Len() != 0 && !slices.Contains(containerTypes[:], object.Index(0).Kind()) {
+			break
+		}
 		mapIter := object.MapRange()
 		for mapIter.Next() {
 			nestedObjects = append(nestedObjects, mapIter.Key(), mapIter.Value())
