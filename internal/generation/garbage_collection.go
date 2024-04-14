@@ -142,7 +142,7 @@ func (gen *Generation) Sweep() (int, int) {
 		return sizeBefore, sizeBefore
 	}
 
-	for offset, arena := range garbageArenas { // TODO: lock generation?
+	for offset, arena := range garbageArenas {
 		index := slices.Index(gen.arenas, *arena)
 		//if index == -1 {
 		//	panic("unknown arena")
