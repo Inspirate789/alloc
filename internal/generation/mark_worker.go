@@ -89,6 +89,9 @@ func (mw markWorker) processObject(object *objectMetadata) {
 		nextObjects := mw.analyzeObject(object)
 		object.Unlock()
 		for _, nextObject := range nextObjects {
+			if nextObject == object {
+				continue
+			}
 			mw.processObject(nextObject)
 			delete(mw.visited, nextObject.address)
 			if nextObject.cycleReferenceSource == object {
