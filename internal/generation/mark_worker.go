@@ -111,5 +111,6 @@ func (mw markWorker) mark(objects <-chan *objectMetadata) {
 	for object := range objects {
 		object.referenceCount = -1
 		mw.processObject(object)
+		delete(mw.visited, object.address)
 	}
 }
