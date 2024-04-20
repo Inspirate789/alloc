@@ -127,7 +127,7 @@ func (mw markWorker) processObject(object *ObjectMetadata, visited bool) (rcSrcs
 			if nextObject == object {
 				continue
 			}
-			rcSrcs = mw.processObject(nextObject, visited)
+			rcSrcs = append(rcSrcs, mw.processObject(nextObject, visited)...)
 			delete(mw.visited, nextObject.address)
 			if len(rcSrcs) != 0 {
 				object.cyclicallyReferenced = true
@@ -137,8 +137,8 @@ func (mw markWorker) processObject(object *ObjectMetadata, visited bool) (rcSrcs
 			}
 		}
 	} else {
-		rcSrcs = append(rcSrcs, rcSrc)
 		object.Unlock()
+		rcSrcs = append(rcSrcs, rcSrc)
 	}
 
 	return

@@ -56,7 +56,7 @@ func mergeSearchFunctions[F ~func(K) (V, bool), K comparable, V any](functions [
 }
 
 func (h *hypervisor) mergeGenerations(sizesBefore, sizesAfter []int) {
-	for i := len(sizesBefore) - 3; i >= 0; i-- { // len(sizesBefore) == len(sizesAfter)
+	for i := len(sizesBefore) - 3; i >= 0; i-- { // suppose that len(sizesBefore) == len(sizesAfter)
 		if float64(sizesAfter[i])/float64(sizesBefore[i]) <= generationMovementThreshold {
 			h.mem.movingGenerations[i].MoveTo(h.mem.movingGenerations[i+1])
 		}
