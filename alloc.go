@@ -2,6 +2,7 @@ package alloc
 
 import (
 	"arena"
+	"github.com/Inspirate789/alloc/internal/generation"
 	"runtime"
 )
 
@@ -14,7 +15,8 @@ type SliceGetter[T any] interface {
 }
 
 type getter[T any] struct {
-	get func() *T
+	metadata *generation.ObjectMetadata
+	get      func() *T
 }
 
 func (g getter[T]) Get() *T {
@@ -22,7 +24,8 @@ func (g getter[T]) Get() *T {
 }
 
 type sliceGetter[T any] struct {
-	get func() []T
+	metadata *generation.ObjectMetadata
+	get      func() []T
 }
 
 func (g sliceGetter[T]) Get() []T {
@@ -30,16 +33,22 @@ func (g sliceGetter[T]) Get() []T {
 }
 
 func New[T any]() Getter[T] {
-	get, finalize := allocateObject[T](mainHypervisor.mem)
-	g := getter[T]{get: get}
+	metadata, get, finalize := allocateObject[T](mainHypervisor.mem)
+	g := getter[T]{
+		metadata: metadata,
+		get:      get,
+	}
 	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
 
 	return g
 }
 
 func MakeSlice[T any](len, cap int) SliceGetter[T] {
-	get, finalize := allocateSlice[T](mainHypervisor.mem, len, cap)
-	g := sliceGetter[T]{get: get}
+	metadata, get, finalize := allocateSlice[T](mainHypervisor.mem, len, cap)
+	g := sliceGetter[T]{
+		metadata: metadata,
+		get:      get,
+	}
 	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
 
 	return g

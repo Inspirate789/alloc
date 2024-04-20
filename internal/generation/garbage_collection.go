@@ -10,13 +10,13 @@ import (
 
 var gcMarkConcurrency = (runtime.NumCPU() + 1) / 2
 
-func (gen *Generation) SearchObject(addr unsafe.Pointer) (metadata *objectMetadata, exist bool) {
+func (gen *Generation) SearchObject(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
 	metadata, exist = gen.addresses.Search(addr)
 	if !exist {
 		var sliceMetadata *SliceMetadata
 		sliceMetadata, exist = gen.slices.Search(addr)
 		if sliceMetadata != nil {
-			metadata = &sliceMetadata.objectMetadata
+			metadata = &sliceMetadata.ObjectMetadata
 		}
 	}
 	if !exist {
@@ -26,16 +26,16 @@ func (gen *Generation) SearchObject(addr unsafe.Pointer) (metadata *objectMetada
 		var sliceMetadata *SliceMetadata
 		sliceMetadata, exist = gen.uncontrollableSlices.Search(addr)
 		if sliceMetadata != nil {
-			metadata = &sliceMetadata.objectMetadata
+			metadata = &sliceMetadata.ObjectMetadata
 		}
 	}
 	return
 }
 
-type SearchFunc func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool)
+type SearchFunc func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool)
 
 func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
-	searchMetadata = func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool) {
+	searchMetadata = func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
 		metadata, exist = gen.SearchObject(addr)
 		if !exist {
 			metadata, exist = searchMetadata(addr)
@@ -43,9 +43,9 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 		return
 	}
 
-	objects := make(chan *objectMetadata)
+	objects := make(chan *ObjectMetadata)
 	wg := sync.WaitGroup{}
-	for i := 0; i < gcMarkConcurrency; i++ {
+	for range gcMarkConcurrency {
 		mw := markWorker{
 			gcID:           gcID,
 			visited:        make(map[unsafe.Pointer]bool),
@@ -58,12 +58,14 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 		}()
 	}
 
-	gen.addresses.Map(func(metadata *objectMetadata) {
+	gen.addresses.Map(func(metadata *ObjectMetadata) {
+		metadata.cyclicallyReferenced = false
 		objects <- metadata
 	})
 
 	gen.slices.Map(func(metadata *SliceMetadata) {
-		objects <- &metadata.objectMetadata
+		metadata.cyclicallyReferenced = false
+		objects <- &metadata.ObjectMetadata
 	})
 
 	close(objects)
@@ -71,13 +73,13 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 }
 
 // (cyclicallyReferenced && referenceCount <= 1) || finalized ==> dead object
-func isGarbage(object *objectMetadata) bool {
-	return (object.cycleReferenceSource != nil && object.referenceCount <= 1) || object.finalized.Load()
+func isGarbage(object *ObjectMetadata) bool {
+	return (object.cyclicallyReferenced && object.referenceCount <= 1) || object.finalized.Load()
 }
 
 func (gen *Generation) cleanUncontrollableObjects() {
 	garbageObjects := make([]unsafe.Pointer, 0)
-	gen.uncontrollableAddresses.Map(func(object *objectMetadata) {
+	gen.uncontrollableAddresses.Map(func(object *ObjectMetadata) {
 		if object.finalized.Load() {
 			garbageObjects = append(garbageObjects, object.address)
 		}
@@ -100,7 +102,7 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 	garbageAddresses := make([]unsafe.Pointer, 0)
 	garbageSlices := make([]unsafe.Pointer, 0)
 
-	gen.addresses.Map(func(object *objectMetadata) {
+	gen.addresses.Map(func(object *ObjectMetadata) {
 		arenaObjectsCount[object.arena]++
 		if isGarbage(object) {
 			garbageObjectsCount[object.arena]++
@@ -110,7 +112,7 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 
 	gen.slices.Map(func(object *SliceMetadata) {
 		arenaObjectsCount[object.arena]++
-		if isGarbage(&object.objectMetadata) {
+		if isGarbage(&object.ObjectMetadata) {
 			garbageObjectsCount[object.arena]++
 			garbageSlices = append(garbageSlices, object.address)
 		}

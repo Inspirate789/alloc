@@ -12,7 +12,7 @@ type memory struct {
 	largeObjectGeneration *generation.Generation
 }
 
-func allocateObject[T any](mem memory) (get func() *T, finalize func()) {
+func allocateObject[T any](mem memory) (m *generation.ObjectMetadata, get func() *T, finalize func()) {
 	size := unsafe.Sizeof(*new(T)) // no allocation
 	if size > objectSizeThreshold {
 		return generation.AllocateObject[T](mem.largeObjectGeneration)
@@ -20,12 +20,12 @@ func allocateObject[T any](mem memory) (get func() *T, finalize func()) {
 	return generation.AllocateObject[T](mem.movingGenerations[0])
 }
 
-func allocateSlice[T any](mem memory, len, cap int) (get func() []T, finalize func()) {
+func allocateSlice[T any](mem memory, len, cap int) (m *generation.ObjectMetadata, get func() []T, finalize func()) {
 	size := unsafe.Sizeof(*new(T)) * uintptr(cap) // no allocation
 	if size > objectSizeThreshold {
-		get, finalize = generation.AllocateSlice[T](mem.largeObjectGeneration, len, cap)
+		m, get, finalize = generation.AllocateSlice[T](mem.largeObjectGeneration, len, cap)
 	} else {
-		get, finalize = generation.AllocateSlice[T](mem.movingGenerations[0], len, cap)
+		m, get, finalize = generation.AllocateSlice[T](mem.movingGenerations[0], len, cap)
 	}
 	return
 }

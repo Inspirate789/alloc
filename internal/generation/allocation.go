@@ -38,10 +38,10 @@ func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H
 	return object
 }
 
-func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
+func AllocateObject[T any](gen *Generation) (m *ObjectMetadata, get func() *T, finalize func()) {
 	object := allocate[T](gen, limited_arena.New[T])
 
-	metadata := objectMetadata{
+	metadata := ObjectMetadata{
 		address:  unsafe.Pointer(object.container),
 		typeInfo: reflect.TypeOf(*object.container),
 	}
@@ -64,20 +64,21 @@ func AllocateObject[T any](gen *Generation) (get func() *T, finalize func()) {
 			println("object is already finalized!")
 		}
 	}
-	return
+
+	return &metadata, get, finalize
 }
 
 func makeSliceFromPtr[T any](ptr unsafe.Pointer, len, cap int) []T {
 	return unsafe.Slice((*T)(ptr), cap)[:len]
 }
 
-func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finalize func()) {
+func AllocateSlice[T any](gen *Generation, len, cap int) (m *ObjectMetadata, get func() []T, finalize func()) {
 	object := allocate[T](gen, func(arena *limited_arena.Arena) ([]T, bool) {
 		return limited_arena.MakeSlice[T](arena, len, cap)
 	})
 
 	metadata := SliceMetadata{
-		objectMetadata: objectMetadata{
+		ObjectMetadata: ObjectMetadata{
 			address:  unsafe.Pointer(&object.container[0]),
 			typeInfo: reflect.TypeOf(object.container),
 		},
@@ -103,7 +104,8 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (get func() []T, finali
 			println("object is already finalized!")
 		}
 	}
-	return
+
+	return &metadata.ObjectMetadata, get, finalize
 }
 
 func AppendSlice[T any](metadata *SliceMetadata, elems ...T) {

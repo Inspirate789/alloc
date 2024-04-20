@@ -18,22 +18,21 @@ type addressContainer[V any] interface {
 }
 
 type gcMetadata struct {
-	lastMarkID              uint64
-	cycleReferenceSource    *objectMetadata
-	cycleReferenceCompleted bool
-	referenceCount          int // founded references (not all)
-	finalized               atomic.Bool
-	arena                   *limited_arena.Arena
+	lastMarkID           uint64
+	cyclicallyReferenced bool
+	referenceCount       int // founded references (not all)
+	finalized            atomic.Bool
+	arena                *limited_arena.Arena
 }
 
-type objectMetadata struct {
+type ObjectMetadata struct {
 	sync.RWMutex
 	address  unsafe.Pointer
 	typeInfo reflect.Type
 	gcMetadata
 }
 
-func (om *objectMetadata) Address() (addr unsafe.Pointer) {
+func (om *ObjectMetadata) Address() (addr unsafe.Pointer) {
 	om.RLock()
 	addr = om.address
 	om.RUnlock()
@@ -41,7 +40,7 @@ func (om *objectMetadata) Address() (addr unsafe.Pointer) {
 }
 
 type SliceMetadata struct {
-	objectMetadata
+	ObjectMetadata
 	len int
 	cap int
 }
@@ -50,8 +49,8 @@ type Generation struct {
 	arenasMx                sync.RWMutex
 	arenas                  []limited_arena.Arena
 	arenaSignals            chan<- struct{}
-	addresses               addressContainer[*objectMetadata]
-	uncontrollableAddresses addressContainer[*objectMetadata]
+	addresses               addressContainer[*ObjectMetadata]
+	uncontrollableAddresses addressContainer[*ObjectMetadata]
 	slices                  addressContainer[*SliceMetadata]
 	uncontrollableSlices    addressContainer[*SliceMetadata]
 }
@@ -60,8 +59,8 @@ func NewGeneration(arenaSignals chan<- struct{}) *Generation {
 	return &Generation{
 		arenas:                  []limited_arena.Arena{limited_arena.NewLimitedArena()},
 		arenaSignals:            arenaSignals,
-		addresses:               metadata_container.NewAddressContainer[*objectMetadata](),
-		uncontrollableAddresses: metadata_container.NewAddressContainer[*objectMetadata](),
+		addresses:               metadata_container.NewAddressContainer[*ObjectMetadata](),
+		uncontrollableAddresses: metadata_container.NewAddressContainer[*ObjectMetadata](),
 		slices:                  metadata_container.NewAddressContainer[*SliceMetadata](),
 		uncontrollableSlices:    metadata_container.NewAddressContainer[*SliceMetadata](),
 	}

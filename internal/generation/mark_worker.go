@@ -7,24 +7,33 @@ import (
 )
 
 type markWorker struct {
+	refCycleID     int
 	gcID           uint64
 	visited        map[unsafe.Pointer]bool
-	searchMetadata func(addr unsafe.Pointer) (metadata *objectMetadata, exist bool)
+	searchMetadata func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool)
 }
 
-func (mw markWorker) markObject(object *objectMetadata) (skip bool) {
+func (mw markWorker) markObject(object *ObjectMetadata, incRefCount bool) (rcSrc *ObjectMetadata, skip, visited bool) {
 	if object.finalized.Load() {
-		return true
+		return nil, true, false
 	}
 
-	object.referenceCount++
-	if object.lastMarkID == mw.gcID && mw.visited[object.address] {
-		object.cycleReferenceSource = object
-		return true
+	if incRefCount {
+		object.referenceCount++
+	}
+
+	if object.lastMarkID == mw.gcID {
+		if mw.visited[object.address] {
+			object.cyclicallyReferenced = true
+			return object, true, true
+		} else {
+			mw.visited[object.address] = true
+			return nil, false, true
+		}
 	} else {
 		object.lastMarkID = mw.gcID
 		mw.visited[object.address] = true
-		return false
+		return nil, false, false
 	}
 }
 
@@ -64,15 +73,41 @@ func (mw markWorker) extractNestedObjects(object reflect.Value) (nestedObjects [
 	return
 }
 
-func (mw markWorker) analyzeObject(metadata *objectMetadata) (nextObjects []*objectMetadata) {
+func (mw markWorker) extractMetadata(object reflect.Value) (metadata *ObjectMetadata, exist bool) {
+	kind := object.Kind()
+
+	if kind == reflect.Interface || kind == reflect.Pointer { // object points to known object
+		elem := object.Elem()
+		if elem.CanAddr() {
+			ptr := elem.Addr().UnsafePointer()
+			if metadata, exist = mw.searchMetadata(ptr); exist {
+				return
+			}
+		}
+	}
+
+	if object.CanAddr() { // object is known
+		ptr := object.Addr().UnsafePointer()
+		if metadata, exist = mw.searchMetadata(ptr); exist {
+			return
+		}
+	}
+
+	if kind == reflect.Interface { // object is getter
+		field := object.Elem().FieldByName("metadata").Interface()
+		if metadata, exist = field.(*ObjectMetadata); exist {
+			return
+		}
+	}
+
+	return
+}
+
+func (mw markWorker) analyzeObject(metadata *ObjectMetadata) (nextObjects []*ObjectMetadata) {
 	object := reflect.NewAt(metadata.typeInfo, metadata.address).Elem()
 	nestedObjects := mw.extractNestedObjects(object)
 	for _, nestedObject := range nestedObjects {
-		if !nestedObject.CanAddr() {
-			continue
-		}
-		addr := nestedObject.Addr().UnsafePointer()
-		if nestedMetadata, exist := mw.searchMetadata(addr); exist {
+		if nestedMetadata, exist := mw.extractMetadata(nestedObject); exist {
 			nextObjects = append(nextObjects, nestedMetadata)
 		} else {
 			// I can't trace it ¯\_(ツ)_/¯
@@ -82,9 +117,9 @@ func (mw markWorker) analyzeObject(metadata *objectMetadata) (nextObjects []*obj
 	return
 }
 
-func (mw markWorker) processObject(object *objectMetadata) {
+func (mw markWorker) processObject(object *ObjectMetadata, visited bool) (rcSrcs []*ObjectMetadata) {
 	object.Lock()
-	skip := mw.markObject(object)
+	rcSrc, skip, visited := mw.markObject(object, !visited)
 	if !skip {
 		nextObjects := mw.analyzeObject(object)
 		object.Unlock()
@@ -92,25 +127,27 @@ func (mw markWorker) processObject(object *objectMetadata) {
 			if nextObject == object {
 				continue
 			}
-			mw.processObject(nextObject)
+			rcSrcs = mw.processObject(nextObject, visited)
 			delete(mw.visited, nextObject.address)
-			if nextObject.cycleReferenceSource == object {
-				object.cycleReferenceCompleted = true
-			} else if nextObject.cycleReferenceSource != nil && !nextObject.cycleReferenceCompleted {
-				object.cycleReferenceSource = nextObject.cycleReferenceSource
+			if len(rcSrcs) != 0 {
+				object.cyclicallyReferenced = true
+				rcSrcs = slices.DeleteFunc(rcSrcs, func(metadata *ObjectMetadata) bool {
+					return metadata == object
+				})
 			}
 		}
 	} else {
+		rcSrcs = append(rcSrcs, rcSrc)
 		object.Unlock()
 	}
 
 	return
 }
 
-func (mw markWorker) mark(objects <-chan *objectMetadata) {
+func (mw markWorker) mark(objects <-chan *ObjectMetadata) {
 	for object := range objects {
-		object.referenceCount = -1
-		mw.processObject(object)
+		object.referenceCount--
+		mw.processObject(object, false)
 		delete(mw.visited, object.address)
 	}
 }
