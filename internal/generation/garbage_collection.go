@@ -35,7 +35,7 @@ func (gen *Generation) SearchObject(addr unsafe.Pointer) (metadata *ObjectMetada
 type SearchFunc func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool)
 
 func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
-	searchMetadata = func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
+	search := func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
 		metadata, exist = gen.SearchObject(addr)
 		if !exist {
 			metadata, exist = searchMetadata(addr)
@@ -49,7 +49,7 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 		mw := markWorker{
 			gcID:           gcID,
 			visited:        make(map[unsafe.Pointer]bool),
-			searchMetadata: searchMetadata,
+			searchMetadata: search,
 		}
 		wg.Add(1)
 		go func() {
@@ -60,11 +60,13 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 
 	gen.addresses.Map(func(metadata *ObjectMetadata) {
 		metadata.cyclicallyReferenced = false
+		metadata.referenceCount--
 		objects <- metadata
 	})
 
 	gen.slices.Map(func(metadata *SliceMetadata) {
 		metadata.cyclicallyReferenced = false
+		metadata.referenceCount--
 		objects <- &metadata.ObjectMetadata
 	})
 

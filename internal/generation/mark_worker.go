@@ -146,7 +146,6 @@ func (mw markWorker) processObject(object *ObjectMetadata, visited bool) (rcSrcs
 
 func (mw markWorker) mark(objects <-chan *ObjectMetadata) {
 	for object := range objects {
-		object.referenceCount--
 		mw.processObject(object, false)
 		delete(mw.visited, object.address)
 	}
