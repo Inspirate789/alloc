@@ -22,13 +22,13 @@ type gcMetadata struct {
 	cyclicallyReferenced bool
 	referenceCount       int // founded references (not all)
 	finalized            atomic.Bool
-	arena                *limited_arena.Arena
 }
 
 type ObjectMetadata struct {
 	sync.RWMutex
 	address  unsafe.Pointer
 	typeInfo reflect.Type
+	arena    *limited_arena.Arena
 	gcMetadata
 }
 

@@ -24,6 +24,7 @@ func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H
 	for _, arena := range gen.arenas {
 		object.container, object.controllable = allocateObject(&arena)
 		if object.container != nil {
+			object.arena = &arena
 			break
 		}
 	}
@@ -31,6 +32,7 @@ func allocate[T any, H holder[T]](gen *Generation, allocateObject allocateFunc[H
 		arena := limited_arena.NewLimitedArena()
 		gen.arenaSignals <- struct{}{}
 		object.container, object.controllable = allocateObject(&arena)
+		object.arena = &arena
 		gen.arenas = append(gen.arenas, arena)
 	}
 	gen.arenasMx.Unlock()
@@ -44,6 +46,7 @@ func AllocateObject[T any](gen *Generation) (m *ObjectMetadata, get func() *T, f
 	metadata := ObjectMetadata{
 		address:  unsafe.Pointer(object.container),
 		typeInfo: reflect.TypeOf(*object.container),
+		arena:    object.arena,
 	}
 
 	if !object.controllable {
@@ -81,6 +84,7 @@ func AllocateSlice[T any](gen *Generation, len, cap int) (m *ObjectMetadata, get
 		ObjectMetadata: ObjectMetadata{
 			address:  unsafe.Pointer(&object.container[0]),
 			typeInfo: reflect.TypeOf(object.container),
+			arena:    object.arena,
 		},
 		len: len,
 		cap: cap,
