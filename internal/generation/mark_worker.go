@@ -9,7 +9,7 @@ import (
 type markWorker struct {
 	gcID           uint64
 	visited        map[unsafe.Pointer]bool
-	searchMetadata func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool)
+	searchMetadata SearchFunc
 }
 
 func (mw markWorker) markObject(object *ObjectMetadata, incRefCount bool) (rcSrc *ObjectMetadata, skip, visited bool) {
@@ -42,7 +42,7 @@ func containerTypes() [6]reflect.Kind {
 	}
 }
 
-func (mw markWorker) extractNestedObjects(object reflect.Value) (nestedObjects []reflect.Value) {
+func extractNestedObjects(object reflect.Value) (nestedObjects []reflect.Value) {
 	switch object.Kind() {
 	case reflect.Pointer, reflect.Interface:
 		nestedObjects = []reflect.Value{object.Elem()}
@@ -104,7 +104,7 @@ func (mw markWorker) extractMetadata(object reflect.Value) (metadata *ObjectMeta
 
 func (mw markWorker) analyzeObject(metadata *ObjectMetadata) (nextObjects []*ObjectMetadata) {
 	object := reflect.NewAt(metadata.typeInfo, metadata.address).Elem()
-	nestedObjects := mw.extractNestedObjects(object)
+	nestedObjects := extractNestedObjects(object)
 	for _, nestedObject := range nestedObjects {
 		if nestedMetadata, exist := mw.extractMetadata(nestedObject); exist {
 			nextObjects = append(nextObjects, nestedMetadata)
