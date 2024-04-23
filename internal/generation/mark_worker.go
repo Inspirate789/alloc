@@ -7,7 +7,6 @@ import (
 )
 
 type markWorker struct {
-	refCycleID     int
 	gcID           uint64
 	visited        map[unsafe.Pointer]bool
 	searchMetadata func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool)
