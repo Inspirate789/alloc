@@ -8,7 +8,7 @@ import (
 
 type markWorker struct {
 	gcID           uint64
-	visited        map[unsafe.Pointer]bool
+	visited        map[unsafe.Pointer]struct{}
 	searchMetadata SearchFunc
 }
 
@@ -22,16 +22,17 @@ func (mw markWorker) markObject(object *ObjectMetadata, incRefCount bool) (rcSrc
 	}
 
 	if object.lastMarkID == mw.gcID {
-		if mw.visited[object.address] {
+		_, visited = mw.visited[object.address]
+		if visited {
 			object.cyclicallyReferenced = true
 			return object, true, true
 		} else {
-			mw.visited[object.address] = true
+			mw.visited[object.address] = struct{}{}
 			return nil, false, true
 		}
 	} else {
 		object.lastMarkID = mw.gcID
-		mw.visited[object.address] = true
+		mw.visited[object.address] = struct{}{}
 		return nil, false, false
 	}
 }

@@ -48,7 +48,7 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 	for range gcMarkConcurrency {
 		mw := markWorker{
 			gcID:           gcID,
-			visited:        make(map[unsafe.Pointer]bool),
+			visited:        make(map[unsafe.Pointer]struct{}),
 			searchMetadata: search,
 		}
 		wg.Add(1)
