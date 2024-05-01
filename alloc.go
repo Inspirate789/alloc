@@ -33,23 +33,41 @@ func (g sliceGetter[T]) Get() []T {
 }
 
 func New[T any]() Getter[T] {
-	metadata, get, finalize := allocateObject[T](mainHypervisor.mem)
+	metadata := allocateObject[T](mainHypervisor.mem)
+
 	g := getter[T]{
 		metadata: metadata,
-		get:      get,
+		get: func() *T {
+			metadata.RLock()
+			res := (*T)(metadata.Address)
+			metadata.RUnlock()
+			return res
+		},
 	}
-	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
+
+	runtime.SetFinalizer(&g, func(_ *getter[T]) {
+		metadata.Finalized.Swap(true)
+	})
 
 	return g
 }
 
 func MakeSlice[T any](len, cap int) SliceGetter[T] {
-	metadata, get, finalize := allocateSlice[T](mainHypervisor.mem, len, cap)
+	metadata := allocateSlice[T](mainHypervisor.mem, len, cap)
+
 	g := sliceGetter[T]{
-		metadata: metadata,
-		get:      get,
+		metadata: &metadata.ObjectMetadata,
+		get: func() []T {
+			//metadata.RLock()
+			res := generation.MakeSliceFromPtr[T](metadata.Address, metadata.Len, metadata.Cap)
+			//metadata.RUnlock()
+			return res
+		},
 	}
-	runtime.SetFinalizer(&g, func(_ *getter[T]) { finalize() })
+
+	runtime.SetFinalizer(&g, func(_ *sliceGetter[T]) {
+		metadata.Finalized.Swap(true)
+	})
 
 	return g
 }

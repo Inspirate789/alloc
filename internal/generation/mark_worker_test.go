@@ -11,15 +11,17 @@ func TestMarkOneSimpleObject(t *testing.T) {
 	// arrange
 	object := 7
 	metadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&object),
+		Address:  unsafe.Pointer(&object),
 		typeInfo: reflect.TypeOf(object),
 	}
 	objects := map[unsafe.Pointer]*ObjectMetadata{
-		metadata.address: metadata,
+		metadata.Address: metadata,
 	}
 
 	input := make(chan *ObjectMetadata, 1)
 	for _, object := range objects {
+		object.cyclicallyReferenced = false
+		object.referenceCount--
 		input <- object
 	}
 	close(input)
@@ -27,7 +29,7 @@ func TestMarkOneSimpleObject(t *testing.T) {
 	const gcID = 1
 	mw := markWorker{
 		gcID:    gcID,
-		visited: make(map[unsafe.Pointer]bool),
+		visited: make(map[unsafe.Pointer]struct{}),
 		searchMetadata: func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
 			metadata, exist = objects[addr]
 			return
@@ -39,7 +41,7 @@ func TestMarkOneSimpleObject(t *testing.T) {
 
 	// assert
 	expectedMetadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&object),
+		Address:  unsafe.Pointer(&object),
 		typeInfo: reflect.TypeOf(object),
 		gcMetadata: gcMetadata{
 			lastMarkID:           gcID,
@@ -69,15 +71,17 @@ func TestMarkOneStruct(t *testing.T) {
 	object.fieldPtr = &object.nonNilPtr
 	object.self = &object
 	metadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&object),
+		Address:  unsafe.Pointer(&object),
 		typeInfo: reflect.TypeOf(object),
 	}
 	objects := map[unsafe.Pointer]*ObjectMetadata{
-		metadata.address: metadata,
+		metadata.Address: metadata,
 	}
 
 	input := make(chan *ObjectMetadata, 1)
 	for _, object := range objects {
+		object.cyclicallyReferenced = false
+		object.referenceCount--
 		input <- object
 	}
 	close(input)
@@ -85,7 +89,7 @@ func TestMarkOneStruct(t *testing.T) {
 	const gcID = 1
 	mw := markWorker{
 		gcID:    gcID,
-		visited: make(map[unsafe.Pointer]bool),
+		visited: make(map[unsafe.Pointer]struct{}),
 		searchMetadata: func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
 			metadata, exist = objects[addr]
 			return
@@ -97,7 +101,7 @@ func TestMarkOneStruct(t *testing.T) {
 
 	// assert
 	expectedMetadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&object),
+		Address:  unsafe.Pointer(&object),
 		typeInfo: reflect.TypeOf(object),
 		gcMetadata: gcMetadata{
 			lastMarkID:           gcID,
@@ -128,20 +132,22 @@ func TestMarkStructSlice(t *testing.T) {
 		}
 		elements = append(elements, elements[i])
 		metadata := &ObjectMetadata{
-			address:  unsafe.Pointer(&elements[i]),
+			Address:  unsafe.Pointer(&elements[i]),
 			typeInfo: reflect.TypeOf(elements[i]),
 		}
-		objects[metadata.address] = metadata
+		objects[metadata.Address] = metadata
 	}
 
 	rootMetadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&elements),
+		Address:  unsafe.Pointer(&elements),
 		typeInfo: reflect.TypeOf(elements),
 	}
-	objects[rootMetadata.address] = rootMetadata
+	objects[rootMetadata.Address] = rootMetadata
 
 	input := make(chan *ObjectMetadata, objectsCount+1)
 	for _, metadata := range objects {
+		metadata.cyclicallyReferenced = false
+		metadata.referenceCount--
 		input <- metadata
 	}
 	close(input)
@@ -149,7 +155,7 @@ func TestMarkStructSlice(t *testing.T) {
 	const gcID = 1
 	mw := markWorker{
 		gcID:    gcID,
-		visited: make(map[unsafe.Pointer]bool),
+		visited: make(map[unsafe.Pointer]struct{}),
 		searchMetadata: func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
 			metadata, exist = objects[addr]
 			return
@@ -161,7 +167,7 @@ func TestMarkStructSlice(t *testing.T) {
 
 	// assert
 	expectedMetadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&elements),
+		Address:  unsafe.Pointer(&elements),
 		typeInfo: reflect.TypeOf(elements),
 		gcMetadata: gcMetadata{
 			lastMarkID:           gcID,
@@ -189,20 +195,22 @@ func TestMarkStructCycledSlice(t *testing.T) {
 		elements[i].self = &elements[i]
 		elements[i].other = &elements[(i+1)%objectsCount]
 		metadata := &ObjectMetadata{
-			address:  unsafe.Pointer(&elements[i]),
+			Address:  unsafe.Pointer(&elements[i]),
 			typeInfo: reflect.TypeOf(elements[i]),
 		}
-		objects[metadata.address] = metadata
+		objects[metadata.Address] = metadata
 	}
 
 	rootMetadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&elements),
+		Address:  unsafe.Pointer(&elements),
 		typeInfo: reflect.TypeOf(elements),
 	}
-	objects[rootMetadata.address] = rootMetadata
+	objects[rootMetadata.Address] = rootMetadata
 
 	input := make(chan *ObjectMetadata, objectsCount+1)
 	for _, metadata := range objects {
+		metadata.cyclicallyReferenced = false
+		metadata.referenceCount--
 		input <- metadata
 	}
 	close(input)
@@ -210,7 +218,7 @@ func TestMarkStructCycledSlice(t *testing.T) {
 	const gcID = 1
 	mw := markWorker{
 		gcID:    gcID,
-		visited: make(map[unsafe.Pointer]bool),
+		visited: make(map[unsafe.Pointer]struct{}),
 		searchMetadata: func(addr unsafe.Pointer) (metadata *ObjectMetadata, exist bool) {
 			metadata, exist = objects[addr]
 			return
@@ -222,7 +230,7 @@ func TestMarkStructCycledSlice(t *testing.T) {
 
 	// assert
 	expectedMetadata := &ObjectMetadata{
-		address:  unsafe.Pointer(&elements),
+		Address:  unsafe.Pointer(&elements),
 		typeInfo: reflect.TypeOf(elements),
 		gcMetadata: gcMetadata{
 			lastMarkID:           gcID,
@@ -233,7 +241,7 @@ func TestMarkStructCycledSlice(t *testing.T) {
 	if !reflect.DeepEqual(rootMetadata, expectedMetadata) {
 		t.Errorf("metadata = %+v, want %+v", rootMetadata, expectedMetadata)
 	}
-	delete(objects, rootMetadata.address)
+	delete(objects, rootMetadata.Address)
 	for _, metadata := range objects {
 		if metadata.lastMarkID != expectedMetadata.lastMarkID {
 			t.Errorf("metadata.lastMarkID = %+v, want %+v", metadata.lastMarkID, expectedMetadata.lastMarkID)

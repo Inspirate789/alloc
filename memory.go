@@ -12,7 +12,7 @@ type memory struct {
 	largeObjectGeneration *generation.Generation
 }
 
-func allocateObject[T any](mem memory) (m *generation.ObjectMetadata, get func() *T, finalize func()) {
+func allocateObject[T any](mem memory) (m *generation.ObjectMetadata) {
 	size := unsafe.Sizeof(*new(T)) // no allocation
 	if size > objectSizeThreshold {
 		return generation.AllocateObject[T](mem.largeObjectGeneration)
@@ -20,21 +20,21 @@ func allocateObject[T any](mem memory) (m *generation.ObjectMetadata, get func()
 	return generation.AllocateObject[T](mem.movingGenerations[0])
 }
 
-func allocateSlice[T any](mem memory, len, cap int) (m *generation.ObjectMetadata, get func() []T, finalize func()) {
+func allocateSlice[T any](mem memory, len, cap int) *generation.SliceMetadata {
 	size := unsafe.Sizeof(*new(T)) * uintptr(cap) // no allocation
 	if size > objectSizeThreshold {
-		m, get, finalize = generation.AllocateSlice[T](mem.largeObjectGeneration, len, cap)
+		return generation.AllocateSlice[T](mem.largeObjectGeneration, len, cap)
 	} else {
-		m, get, finalize = generation.AllocateSlice[T](mem.movingGenerations[0], len, cap)
+		return generation.AllocateSlice[T](mem.movingGenerations[0], len, cap)
 	}
-	return
 }
 
 func appendSlice[T any](mem memory, slice []T, elems ...T) {
-	slicePtr := unsafe.Pointer(&slice[0])
+	slicePtr := unsafe.Pointer(&slice[:1][0])
+	var gen *generation.Generation
 	var metadata *generation.SliceMetadata
 	var exist bool
-	for _, gen := range mem.movingGenerations {
+	for _, gen = range mem.movingGenerations {
 		metadata, exist = gen.SearchSliceData(slicePtr)
 		if exist {
 			break
@@ -44,8 +44,10 @@ func appendSlice[T any](mem memory, slice []T, elems ...T) {
 		metadata, exist = mem.largeObjectGeneration.SearchSliceData(slicePtr)
 		if !exist {
 			panic("slice data not found in memory")
+		} else {
+			gen = mem.largeObjectGeneration
 		}
 	}
 
-	generation.AppendSlice(metadata, elems...)
+	generation.AppendSlice(gen, metadata, elems...)
 }

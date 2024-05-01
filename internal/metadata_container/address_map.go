@@ -6,28 +6,26 @@ import (
 	"unsafe"
 )
 
-type address interface {
-	Address() unsafe.Pointer
-}
+const startMapSize = 5000 // TODO: remove?
 
-type addressMap[V address] map[unsafe.Pointer]V
+type addressMap[V any] map[unsafe.Pointer]V
 
-type AddressContainer[V address] struct {
+type AddressContainer[V any] struct {
 	addressMap[V]
 	lock *sync.RWMutex
 }
 
-func NewAddressContainer[V address]() AddressContainer[V] {
+func NewAddressContainer[V any]() AddressContainer[V] {
 	return AddressContainer[V]{
-		addressMap: make(addressMap[V]),
+		addressMap: make(addressMap[V], startMapSize),
 		lock:       new(sync.RWMutex),
 	}
 }
 
-func (ac AddressContainer[V]) Add(value V) {
-	ac.lock.Lock()
-	ac.addressMap[value.Address()] = value
-	ac.lock.Unlock()
+func (ac AddressContainer[V]) Add(key unsafe.Pointer, value V) {
+	// ac.lock.Lock()
+	ac.addressMap[key] = value
+	// ac.lock.Unlock()
 }
 
 func (ac AddressContainer[V]) Search(addr unsafe.Pointer) (value V, exist bool) {
@@ -55,6 +53,16 @@ func (ac AddressContainer[V]) MoveTo(container any) {
 	clear(ac.addressMap)
 
 	dst.lock.Unlock()
+	ac.lock.Unlock()
+}
+
+func (ac AddressContainer[V]) Move(old, new unsafe.Pointer) {
+	ac.lock.Lock()
+	value, exist := ac.addressMap[old]
+	if exist {
+		delete(ac.addressMap, old)
+		ac.addressMap[new] = value
+	}
 	ac.lock.Unlock()
 }
 

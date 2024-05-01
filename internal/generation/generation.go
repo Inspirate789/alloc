@@ -9,50 +9,35 @@ import (
 	"unsafe"
 )
 
-type addressContainer[V any] interface {
-	Add(value V)
-	Search(addr unsafe.Pointer) (value V, exist bool)
-	Map(func(value V))
-	MoveTo(container any)
-	Delete(addresses []unsafe.Pointer)
-}
-
 type gcMetadata struct {
 	lastMarkID           uint64
 	cyclicallyReferenced bool
 	referenceCount       int // founded references (not all)
-	finalized            atomic.Bool
+	Finalized            atomic.Bool
 }
 
 type ObjectMetadata struct {
 	sync.RWMutex
-	address  unsafe.Pointer
+	Address  unsafe.Pointer
 	typeInfo reflect.Type
 	arena    *limited_arena.Arena
 	gcMetadata
 }
 
-func (om *ObjectMetadata) Address() (addr unsafe.Pointer) {
-	om.RLock()
-	addr = om.address
-	om.RUnlock()
-	return
-}
-
 type SliceMetadata struct {
 	ObjectMetadata
-	len int
-	cap int
+	Len int
+	Cap int
 }
 
 type Generation struct {
 	arenasMx                sync.RWMutex
 	arenas                  []limited_arena.Arena
 	arenaSignals            chan<- struct{}
-	addresses               addressContainer[*ObjectMetadata]
-	uncontrollableAddresses addressContainer[*ObjectMetadata]
-	slices                  addressContainer[*SliceMetadata]
-	uncontrollableSlices    addressContainer[*SliceMetadata]
+	addresses               metadata_container.AddressContainer[*ObjectMetadata]
+	uncontrollableAddresses metadata_container.AddressContainer[*ObjectMetadata]
+	slices                  metadata_container.AddressContainer[*SliceMetadata]
+	uncontrollableSlices    metadata_container.AddressContainer[*SliceMetadata]
 }
 
 func NewGeneration(arenaSignals chan<- struct{}) *Generation {

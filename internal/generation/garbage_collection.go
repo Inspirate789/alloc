@@ -76,22 +76,22 @@ func (gen *Generation) Mark(gcID uint64, searchMetadata SearchFunc) {
 
 // (cyclicallyReferenced && referenceCount <= 1) || finalized ==> dead object
 func isGarbage(object *ObjectMetadata) bool {
-	return (object.cyclicallyReferenced && object.referenceCount <= 1) || object.finalized.Load()
+	return (object.cyclicallyReferenced && object.referenceCount <= 1) || object.Finalized.Load()
 }
 
 func (gen *Generation) cleanUncontrollableObjects() {
 	garbageObjects := make([]unsafe.Pointer, 0)
 	gen.uncontrollableAddresses.Map(func(object *ObjectMetadata) {
-		if object.finalized.Load() {
-			garbageObjects = append(garbageObjects, object.address)
+		if object.Finalized.Load() {
+			garbageObjects = append(garbageObjects, object.Address)
 		}
 	})
 	gen.uncontrollableAddresses.Delete(garbageObjects)
 
 	garbageSlices := make([]unsafe.Pointer, 0)
 	gen.uncontrollableSlices.Map(func(slice *SliceMetadata) {
-		if slice.finalized.Load() {
-			garbageSlices = append(garbageSlices, slice.address)
+		if slice.Finalized.Load() {
+			garbageSlices = append(garbageSlices, slice.Address)
 		}
 	})
 	gen.uncontrollableSlices.Delete(garbageSlices)
@@ -108,7 +108,7 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 		arenaObjectsCount[object.arena]++
 		if isGarbage(object) {
 			garbageObjectsCount[object.arena]++
-			garbageAddresses = append(garbageAddresses, object.address)
+			garbageAddresses = append(garbageAddresses, object.Address)
 		}
 	})
 
@@ -116,7 +116,7 @@ func (gen *Generation) detectGarbageArenas() []*limited_arena.Arena {
 		arenaObjectsCount[object.arena]++
 		if isGarbage(&object.ObjectMetadata) {
 			garbageObjectsCount[object.arena]++
-			garbageSlices = append(garbageSlices, object.address)
+			garbageSlices = append(garbageSlices, object.Address)
 		}
 	})
 

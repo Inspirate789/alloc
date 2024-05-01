@@ -13,7 +13,7 @@ type markWorker struct {
 }
 
 func (mw markWorker) markObject(object *ObjectMetadata, incRefCount bool) (rcSrc *ObjectMetadata, skip, visited bool) {
-	if object.finalized.Load() {
+	if object.Finalized.Load() {
 		return nil, true, false
 	}
 
@@ -22,17 +22,17 @@ func (mw markWorker) markObject(object *ObjectMetadata, incRefCount bool) (rcSrc
 	}
 
 	if object.lastMarkID == mw.gcID {
-		_, visited = mw.visited[object.address]
+		_, visited = mw.visited[object.Address]
 		if visited {
 			object.cyclicallyReferenced = true
 			return object, true, true
 		} else {
-			mw.visited[object.address] = struct{}{}
+			mw.visited[object.Address] = struct{}{}
 			return nil, false, true
 		}
 	} else {
 		object.lastMarkID = mw.gcID
-		mw.visited[object.address] = struct{}{}
+		mw.visited[object.Address] = struct{}{}
 		return nil, false, false
 	}
 }
@@ -104,7 +104,7 @@ func (mw markWorker) extractMetadata(object reflect.Value) (metadata *ObjectMeta
 }
 
 func (mw markWorker) analyzeObject(metadata *ObjectMetadata) (nextObjects []*ObjectMetadata) {
-	object := reflect.NewAt(metadata.typeInfo, metadata.address).Elem()
+	object := reflect.NewAt(metadata.typeInfo, metadata.Address).Elem()
 	nestedObjects := extractNestedObjects(object)
 	for _, nestedObject := range nestedObjects {
 		if nestedMetadata, exist := mw.extractMetadata(nestedObject); exist {
@@ -128,7 +128,7 @@ func (mw markWorker) processObject(object *ObjectMetadata, visited bool) (rcSrcs
 				continue
 			}
 			rcSrcs = append(rcSrcs, mw.processObject(nextObject, visited)...)
-			delete(mw.visited, nextObject.address)
+			delete(mw.visited, nextObject.Address)
 			if len(rcSrcs) != 0 {
 				object.cyclicallyReferenced = true
 				rcSrcs = slices.DeleteFunc(rcSrcs, func(metadata *ObjectMetadata) bool {
@@ -147,6 +147,6 @@ func (mw markWorker) processObject(object *ObjectMetadata, visited bool) (rcSrcs
 func (mw markWorker) mark(objects <-chan *ObjectMetadata) {
 	for object := range objects {
 		mw.processObject(object, false)
-		delete(mw.visited, object.address)
+		delete(mw.visited, object.Address)
 	}
 }
