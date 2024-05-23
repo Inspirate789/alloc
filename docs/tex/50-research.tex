@@ -1,14 +1,14 @@
 \chapter{Исследовательский раздел}
 
+% В данном разделе приведено исследование влияния разработанного метода на характеристики выполнения программ на языке Golang, реализующих различные классы алгоритмов.
 
+\section*{Цель исследования}
 
-\section{Цель исследования}
-
-Реализованный метод распределения памяти может иметь в различные сценарии использования и каждом из них оказывать различное влияние на характеристики выполнения программ. Предполагается, что изменение характеристик выполнения программы при применении реализованного метода зависит от класса алгоритма, который она реализует (см. п. \ref{alg_classes}).
+Реализованный метод распределения памяти может иметь различные сценарии использования и каждом из них оказывать различное влияние на характеристики выполнения программ. Предполагается, что изменение характеристик выполнения программы при применении реализованного метода зависит от класса алгоритма, который она реализует (см. п. \ref{alg_classes}).
 
 Целью исследования является проведение сравнительного анализа разработанного метода с реализацией, существующей программирования Golang.
 
-\section{Описание исследования}
+\section*{Описание исследования}
 
 Для проведения сравнительного анализа необходимо установить зависимость между длиной входа алгоритма и временем его выполнения для различных классов алгоритмов и для двух методов распределения памяти: встроенного и реализованного. Для этого были подготовлены тесты производительности для следующих алгоритмов:
 
@@ -24,7 +24,7 @@
 
 
 
-\section{Технические характеристики оборудования}
+\section*{Технические характеристики оборудования}
 
 Ниже приведены технические характеристики устройства, на котором выполнялось тестирование.
 
@@ -38,11 +38,11 @@
 
 
 
-\section{Результаты исследования}
+\section*{Результаты исследования}
 
-\subsection{Алгоритм конвейерной обработки данных}
+\subsection*{Алгоритм конвейерной обработки данных}
 
-Для проведения замеров был разработан конвейер, состоящий из трёх линий: аллокация буфера фиксированного размера, запись данных в него и их чтение. В таблице \ref{tab:pipeline} представлены результаты замеров времени выполнения алгоритма при различном количестве заявок. 
+Для проведения замеров был разработан конвейер, состоящий из трёх линий: аллокация буфера фиксированного размера, запись данных в него и их чтение. В таблице \ref{tab:pipeline} представлены результаты замеров времени выполнения алгоритма при различном количестве заявок. На рисунке \ref{fig:time-pipeline} представлены данные из таблицы \ref{tab:pipeline} в виде столбчатой диаграммы.
 
 \captionsetup{format=hang,justification=raggedright, singlelinecheck=off}
 \begin{table}[H]
@@ -64,67 +64,70 @@
 	\end{tabular}
 \end{table}
 
-На рисунке \ref{fig:time-pipeline} представлены данные из таблицы \ref{tab:pipeline} в виде графика.
-
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}
-		\begin{axis}[
+		\begin{semilogyaxis} [
+			ybar,
 			xlabel={Число заявок, шт},
 			ylabel={Время выполнения алгоритма, мс},
-			axis lines=left,
-			xmin=0, xmax=10000,
-			ymin=0, ymax=37350,
-			grid = both,
+			grid = major,
 			grid style = {dashed, lightgray!35},
-			xtick distance = 1000,
-			ytick distance = 5000,
+			xtick={0, 1, 2, 3, 4, 5, 6, 7, 8},
+			xticklabels={$10$, $50$, $100$, $500$, $1000$, $3000$, $5000$, $7500$, $10000$},
+			ytick={10^2.3, 10^2.9, 10^3.5, 10^4.1, 10^4.7},
+			bar width = 12pt,
 			width = 0.95\textwidth,
+			height = 0.66\textwidth,
 			tick label style={font=\scriptsize},
 			scaled ticks=false,
-			height=0.3\textheight,
 			legend entries={Реализованный метод, Встроенные средства языка},
-			legend pos=north west]
+			legend pos=north west,
+			legend image post style={scale=1.9}
 			]
 			
 			\addplot [
-			color=blue,
-			mark=square,
-			] coordinates {
-				(10, 271)
-				(50, 476)
-				(100, 702)
-				(500, 1811)
-				(1000, 3389)
-				(3000, 11673)
-				(5000, 19897)
-				(7500, 28661)
-				(10000, 37349)
+			draw = blue,
+			semithick,
+			pattern = vertical lines,
+			pattern color = blue
+			]   coordinates {
+				(0, 271)
+				(1, 476)
+				(2, 702)
+				(3, 1811)
+				(4, 3389)
+				(5, 11673)
+				(6, 19897)
+				(7, 28661)
+				(8, 37349)
 			};
 			
 			\addplot [
-			color=red,
-			mark=square,
+			draw = red,
+			semithick,
+			pattern = horizontal lines,
+			pattern color = red
 			] coordinates {
-				(10, 321)
-				(50, 458)
-				(100, 678)
-				(500, 1720)
-				(1000, 3248)
-				(3000, 9290)
-				(5000, 15272)
-				(7500, 21387)
-				(10000, 27465)
+				(0, 321)
+				(1, 458)
+				(2, 678)
+				(3, 1720)
+				(4, 3248)
+				(5, 9290)
+				(6, 15272)
+				(7, 21387)
+				(8, 27465)
 			};
-		\end{axis}
+		\end{semilogyaxis}
 	\end{tikzpicture}
-	\caption{График зависимости времени выполнения алгоритма конвейерной обработки данных от числа заявок}
+	\caption{Зависимость времени выполнения алгоритма конвейерной обработки данных от числа заявок}
 	\label{fig:time-pipeline}
 \end{figure}
 
-\subsection{Алгоритм сортировки слиянием}
+\subsection*{Алгоритм сортировки слиянием}
 
-В таблице \ref{tab:mergesort} представлены результаты замеров времени выполнения алгоритма сортировки слиянием при различных размерах входного массива целых чисел. 
+В таблице \ref{tab:mergesort} представлены результаты замеров времени выполнения алгоритма сортировки слиянием при различных размерах входного массива целых чисел. На рисунке \ref{fig:time-mergesort} представлены данные из таблицы \ref{tab:mergesort} в виде столбчатой диаграммы.
 
 \begin{table}[H]
 	\centering
@@ -145,65 +148,67 @@
 	\end{tabular}
 \end{table}
 
-На рисунке \ref{fig:time-mergesort} представлены данные из таблицы \ref{tab:mergesort} в виде графика.
-
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}
-		\begin{axis}[
+		\begin{semilogyaxis} [
+			ybar,
 			xlabel={Число элементов в массиве, шт},
 			ylabel={Время выполнения алгоритма, мс},
-			axis lines=left,
-			xmin=0, xmax=100000,
-			ymin=10, ymax=102000,
-			grid = both,
+			grid = major,
 			grid style = {dashed, lightgray!35},
-			xtick distance = 10000,
-			ytick distance = 20000,
+			xtick={0, 1, 2, 3, 4, 5, 6, 7, 8},
+			xticklabels={$100$, $500$, $1000$, $10000$, $30000$, $50000$, $75000$, $10000$, $100000$},
+			bar width = 12pt,
 			width = 0.95\textwidth,
+			height = 0.66\textwidth,
 			tick label style={font=\scriptsize},
 			scaled ticks=false,
-			height=0.3\textheight,
 			legend entries={Реализованный метод, Встроенные средства языка},
-			legend pos=north west]
+			legend pos=north west,
+			legend image post style={scale=1.9}
 			]
 			
 			\addplot [
-			color=blue,
-			mark=square,
-			] coordinates {
-				(100, 91)
-				(500, 694)
-				(1000, 993)
-				(5000, 5138)
-				(10000, 10037)
-				(30000, 30771)
-				(50000, 51519)
-				(75000, 76830)
-				(100000, 101879)
+			draw = blue,
+			semithick,
+			pattern = vertical lines,
+			pattern color = blue
+			]   coordinates {
+				(0, 91)
+				(1, 694)
+				(2, 993)
+				(3, 5138)
+				(4, 10037)
+				(5, 30771)
+				(6, 51519)
+				(7, 76830)
+				(8, 101879)
 			};
 			
 			\addplot [
-			color=red,
-			mark=square,
+			draw = red,
+			semithick,
+			pattern = horizontal lines,
+			pattern color = red
 			] coordinates {
-				(100, 13)
-				(500, 111)
-				(1000, 241)
-				(5000, 1566)
-				(10000, 3855)
-				(30000, 10163)
-				(50000, 16459)
-				(75000, 29381)
-				(100000, 42221)
+				(0, 13)
+				(1, 111)
+				(2, 241)
+				(3, 1566)
+				(4, 3855)
+				(5, 10163)
+				(6, 16459)
+				(7, 29381)
+				(8, 42221)
 			};
-		\end{axis}
+		\end{semilogyaxis}
 	\end{tikzpicture}
-	\caption{График зависимости времени выполнения алгоритма сортировки слиянием от числа элементов в массиве}
+	\caption{Зависимость времени выполнения алгоритма сортировки слиянием от числа элементов в массиве}
 	\label{fig:time-mergesort}
 \end{figure}
 
-\subsection{Алгоритм нахождения расстояния Левенштейна}
+\subsection*{Алгоритм нахождения расстояния Левенштейна}
 
 В таблице \ref{tab:levenstein} представлены результаты замеров времени выполнения нерекурсивного алгоритма нахождения расстояния Левенштейна между строками равной длины.
 
@@ -216,7 +221,7 @@
 		\multicolumn{1}{|I|}{\textit{Число символов в строках, шт}} & \multicolumn{1}{G}{\textit{Время выполнения при использовании реализованного метода, мс}} & \multicolumn{1}{|G|}{\textit{Время выполнения при использовании встроенных средств языка, мс}} \\ \hline
 		100 & 184 & 42 \\ \hline
 		300 & 1780 & 326 \\ \hline
-		500 & 5258 & 5730 \\ \hline
+		500 & 5258 & 573 \\ \hline
 		750 & 11621 & 1818 \\ \hline
 		1000 & 19222 & 3483 \\ \hline
 		2000 & 73641 & 13963 \\ \hline
@@ -226,67 +231,72 @@
 	\end{tabular}
 \end{table}
 
-На рисунке \ref{fig:time-levenstein} представлены данные из таблицы \ref{tab:levenstein} в виде графика.
+\clearpage
+На рисунке \ref{fig:time-levenstein} представлены данные из таблицы \ref{tab:levenstein} в виде столбчатой диаграммы.
 
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}
-		\begin{axis}[
+		\begin{semilogyaxis} [
+			ybar,
 			xlabel={Число символов в строках, шт},
 			ylabel={Время выполнения алгоритма, мс},
-			axis lines=left,
-			xmin=100, xmax=5000,
-			ymin=0, ymax=550000,
-			grid = both,
+			grid = major,
 			grid style = {dashed, lightgray!35},
-			xtick distance = 500,
-			ytick distance = 50000,
+			xtick={0, 1, 2, 3, 4, 5, 6, 7, 8},
+			xticklabels={$100$, $300$, $500$, $750$, $1000$, $2000$, $3000$, $4000$, $5000$},
+			bar width = 12pt,
 			width = 0.95\textwidth,
+			height = 0.66\textwidth,
 			tick label style={font=\scriptsize},
 			scaled ticks=false,
-			height=0.3\textheight,
 			legend entries={Реализованный метод, Встроенные средства языка},
-			legend pos=north west]
+			legend pos=north west,
+			legend image post style={scale=1.9}
 			]
 			
 			\addplot [
-			color=blue,
-			mark=square,
-			] coordinates {
-				(100, 184)
-				(300, 1780)
-				(500, 5258)
-				(750, 11621)
-				(1000, 19222)
-				(2000, 73641)
-				(3000, 166382)
-				(4000, 346885)
-				(5000, 544065)
+			draw = blue,
+			semithick,
+			pattern = vertical lines,
+			pattern color = blue
+			]   coordinates {
+				(0, 184)
+				(1, 1780)
+				(2, 5258)
+				(3, 11621)
+				(4, 19222)
+				(5, 73641)
+				(6, 166382)
+				(7, 346885)
+				(8, 544065)
 			};
 			
 			\addplot [
-			color=red,
-			mark=square,
+			draw = red,
+			semithick,
+			pattern = horizontal lines,
+			pattern color = red
 			] coordinates {
-				(100, 42)
-				(300, 326)
-				(500, 5730)
-				(750, 1818)
-				(1000, 3483)
-				(2000, 13963)
-				(3000, 31616)
-				(4000, 53427)
-				(5000, 86802)
+				(0, 42)
+				(1, 326)
+				(2, 573)
+				(3, 1818)
+				(4, 3483)
+				(5, 13963)
+				(6, 31616)
+				(7, 53427)
+				(8, 86802)
 			};
-		\end{axis}
+		\end{semilogyaxis}
 	\end{tikzpicture}
-	\caption{График зависимости времени выполнения алгоритма нахождения расстояния Левенштейна от числа символов в строках}
+	\caption{Зависимость времени выполнения алгоритма нахождения расстояния Левенштейна от числа символов в строках}
 	\label{fig:time-levenstein}
 \end{figure}
 
-\subsection{Алгоритм умножения матриц по Винограду}
+\subsection*{Алгоритм умножения матриц по Винограду}
 
-В таблице \ref{tab:winograd} представлены результаты замеров времени выполнения алгоритма Винограда умножения квадратных матриц равной размерности.
+В таблице \ref{tab:winograd} представлены результаты замеров времени выполнения алгоритма Винограда умножения квадратных матриц равной размерности. На рисунке \ref{fig:time-winograd} представлены данные из таблицы \ref{tab:winograd} в виде столбчатой диаграммы.
 
 \begin{table}[H]
 	\centering
@@ -307,67 +317,69 @@
 	\end{tabular}
 \end{table}
 
-На рисунке \ref{fig:time-winograd} представлены данные из таблицы \ref{tab:winograd} в виде графика.
-
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}
-		\begin{axis}[
+		\begin{semilogyaxis} [
+			ybar,
 			xlabel={Размерность матриц},
 			ylabel={Время выполнения алгоритма, мс},
-			axis lines=left,
-			xmin=0, xmax=1000,
-			ymin=0, ymax=7020000,
-			grid = both,
+			grid = major,
 			grid style = {dashed, lightgray!35},
-			xtick distance = 100,
-			ytick distance = 1000000,
+			xtick={0, 1, 2, 3, 4, 5, 6, 7, 8},
+			xticklabels={$10$, $50$, $100$, $300$, $500$, $650$, $750$, $900$, $1000$},
+			bar width = 12pt,
 			width = 0.95\textwidth,
+			height = 0.66\textwidth,
 			tick label style={font=\scriptsize},
 			scaled ticks=false,
-			height=0.3\textheight,
 			legend entries={Реализованный метод, Встроенные средства языка},
-			legend pos=north west]
+			legend pos=north west,
+			legend image post style={scale=1.9}
 			]
 			
 			\addplot [
-			color=blue,
-			mark=square,
-			] coordinates {
-				(10, 7.742)
-				(50, 222)
-				(100, 1495)
-				(300, 52627)
-				(500, 227228)
-				(650, 462251)
-				(750, 838280)
-				(900, 1508186)
-				(1000, 3049303)
+			draw = blue,
+			semithick,
+			pattern = vertical lines,
+			pattern color = blue
+			]   coordinates {
+				(0, 7.742)
+				(1, 222)
+				(2, 1495)
+				(3, 52627)
+				(4, 227228)
+				(5, 462251)
+				(6, 838280)
+				(7, 1508186)
+				(8, 3049303)
 			};
 			
 			\addplot [
-			color=red,
-			mark=square,
+			draw = red,
+			semithick,
+			pattern = horizontal lines,
+			pattern color = red
 			] coordinates {
-				(10, 7.765)
-				(50, 303)
-				(100, 2196)
-				(300, 78902)
-				(500, 406249)
-				(650, 839183)
-				(750, 1401997)
-				(900, 3053736)
-				(1000, 7017908)
+				(0, 7.765)
+				(1, 303)
+				(2, 2196)
+				(3, 78902)
+				(4, 406249)
+				(5, 839183)
+				(6, 1401997)
+				(7, 3053736)
+				(8, 7017908)
 			};
-		\end{axis}
+		\end{semilogyaxis}
 	\end{tikzpicture}
-	\caption{График зависимости времени выполнения алгоритма умножения матриц по Винограду от их размерности}
+	\caption{Зависимость времени выполнения алгоритма умножения матриц по Винограду от их размерности}
 	\label{fig:time-winograd}
 \end{figure}
 
-\subsection{Алгоритм сортировки подсчётом}
+\subsection*{Алгоритм сортировки подсчётом}
 
-В таблице \ref{tab:countingsort} представлены результаты замеров времени выполнения алгоритма сортировки подсчётом при различных размерах входного массива целых чисел, находящихся в полуинтервале $[0;10^7)$. 
+В таблице \ref{tab:countingsort} представлены результаты замеров времени выполнения алгоритма сортировки подсчётом при различных размерах входного массива целых чисел, находящихся в полуинтервале $[0;10^7)$. На рисунке \ref{fig:time-countingsort} представлены данные из таблицы \ref{tab:countingsort} в виде столбчатой диаграммы.
 
 \begin{table}[H]
 	\centering
@@ -382,67 +394,69 @@
 		500000 & 20712 & 23525 \\ \hline
 		1000000 & 28030 & 32345 \\ \hline
 		3000000 & 52895 & 55984 \\ \hline
-		5000000 & 79864 & 78069 \\ \hline
+		5000000 & 78564 & 78069 \\ \hline
 		7500000 & 110101 & 109593 \\ \hline
 		10000000 & 138367 & 137969 \\ \hline
 	\end{tabular}
 \end{table}
 
-На рисунке \ref{fig:time-countingsort} представлены данные из таблицы \ref{tab:countingsort} в виде графика.
-
 \begin{figure}[H]
 	\centering
 	\begin{tikzpicture}
-		\begin{axis}[
-			xlabel={Число элементов в массиве, шт},
+		\begin{semilogyaxis} [
+			ybar,
+			xlabel={Размерность задачи},
 			ylabel={Время выполнения алгоритма, мс},
-			axis lines=left,
-			xmin=0, xmax=10000000,
-			ymin=10000, ymax=140000,
-			grid = both,
+			grid = major,
 			grid style = {dashed, lightgray!35},
-			xtick distance = 1000000,
-			ytick distance = 20000,
+			xtick={0, 1, 2, 3, 4, 5, 6, 7, 8},
+			xticklabels={$1\cdot10^3$, $1\cdot10^4$, $1\cdot10^5$, $5\cdot10^5$, $1\cdot10^6$, $3\cdot10^6$, $5\cdot10^6$, $7.5\cdot10^6$, $1\cdot10^7$},
+			bar width = 14pt,
 			width = 0.95\textwidth,
+			height = 0.66\textwidth,
 			tick label style={font=\scriptsize},
 			scaled ticks=false,
-			height=0.3\textheight,
 			legend entries={Реализованный метод, Встроенные средства языка},
-			legend pos=north west]
+			legend pos=north west,
+			legend image post style={scale=1.9}
 			]
 			
 			\addplot [
-			color=blue,
-			mark=square,
-			] coordinates {
-				(1000, 14687)
-				(10000, 15220)
-				(100000, 16556)
-				(500000, 20712)
-				(1000000, 28030)
-				(3000000, 52895)
-				(5000000, 79864)
-				(7500000, 110101)
-				(10000000, 138367)
+			draw = blue,
+			semithick,
+			pattern = vertical lines,
+			pattern color = blue
+			]   coordinates {
+				(0, 14687)
+				(1, 15220)
+				(2, 16556)
+				(3, 20712)
+				(4, 28030)
+				(5, 52895)
+				(6, 78564)
+				(7, 110101)
+				(8, 138367)
 			};
 			
 			\addplot [
-			color=red,
-			mark=square,
+			draw = red,
+			semithick,
+			pattern = horizontal lines,
+			pattern color = red
 			] coordinates {
-				(1000, 18527)
-				(10000, 18667)
-				(100000, 20360)
-				(500000, 23525)
-				(1000000, 32345)
-				(3000000, 55984)
-				(5000000, 78069)
-				(7500000, 109593)
-				(10000000, 137969)
+				(0, 18527)
+				(1, 18667)
+				(2, 20360)
+				(3, 23525)
+				(4, 32345)
+				(5, 55984)
+				(6, 78069)
+				(7, 109593)
+				(8, 137969)
 			};
-		\end{axis}
+		\end{semilogyaxis}
 	\end{tikzpicture}
-	\caption{График зависимости времени выполнения алгоритма сортировки подсчётом от числа элементов в массиве}
+	\caption{Зависимость времени выполнения алгоритма сортировки подсчётом от числа элементов в массиве}
 	\label{fig:time-countingsort}
 \end{figure}
 

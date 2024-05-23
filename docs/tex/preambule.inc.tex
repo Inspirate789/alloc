@@ -1,3 +1,11 @@
+\tolerance 1414
+\hbadness 1414
+\emergencystretch 1.5em
+\hfuzz 0.3pt        % размер максимального переполнения без warning'a
+\widowpenalty=10000 % запрещает одиночную строку абзаца в начале страницы 
+\vfuzz \hfuzz
+\raggedbottom       % если на странице мало содержимого, добавить пустое место в конце, а не в середине страницы
+
 \usepackage[english,main=russian]{babel}
 
 %\usepackage{newtxmath}
@@ -162,6 +170,12 @@
 \newcolumntype{G}{>{\centering\arraybackslash}p{0.36\textwidth}}
 \newcolumntype{K}{>{\raggedleft\arraybackslash}p{0.36\textwidth}}
 
+\newcolumntype{V}{>{\centering\arraybackslash}p{14mm}}
+\newcolumntype{W}{>{\centering\arraybackslash}p{14mm}}
+\newcolumntype{X}{>{\centering\arraybackslash}p{20mm}}
+\newcolumntype{Y}{>{\centering\arraybackslash}p{5mm}}
+\newcolumntype{Z}{>{\centering\arraybackslash}p{5mm}}
+
 % ---------------------------------------- FIGURE ----------------------------------------
 
 \usepackage{graphicx}
@@ -177,6 +191,7 @@
 
 \usepackage{pgfplots}
 \pgfplotsset{compat=newest}
+\usetikzlibrary{patterns}
 
 % ----------------------------------------- MATH -----------------------------------------
 
