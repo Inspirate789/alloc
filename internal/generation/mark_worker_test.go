@@ -1,10 +1,26 @@
 package generation
 
 import (
+	"github.com/Inspirate789/alloc/internal/limited_arena"
 	"reflect"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"unsafe"
 )
+
+func TestObjectMetadata(t *testing.T) {
+	t.Log(unsafe.Sizeof(sync.RWMutex{}), reflect.TypeOf(sync.RWMutex{}).Size())
+	t.Log(unsafe.Sizeof(unsafe.Pointer(nil)), reflect.TypeOf(unsafe.Pointer(nil)).Size())
+	t.Log(unsafe.Sizeof(reflect.TypeOf(1)), reflect.TypeOf(reflect.TypeOf(1)).Size())
+	t.Log(unsafe.Sizeof(&limited_arena.Arena{}), reflect.TypeOf(&limited_arena.Arena{}).Size())
+	t.Log(unsafe.Sizeof(uint64(0)), reflect.TypeOf(uint64(0)).Size())
+	t.Log(unsafe.Sizeof(false), reflect.TypeOf(false).Size())
+	t.Log(unsafe.Sizeof(int(0)), reflect.TypeOf(int(0)).Size())
+	t.Log(unsafe.Sizeof(atomic.Bool{}), reflect.TypeOf(atomic.Bool{}).Size())
+	t.Log(unsafe.Sizeof(gcMetadata{}), reflect.TypeOf(gcMetadata{}).Size())
+	t.Log(unsafe.Sizeof(ObjectMetadata{}), reflect.TypeOf(ObjectMetadata{}).Size())
+}
 
 func TestMarkOneSimpleObject(t *testing.T) {
 	t.Parallel()
