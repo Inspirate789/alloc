@@ -23,7 +23,7 @@
 \newfontfamily\englishfont{Times New Roman}
 
 \usepackage[
-	left=30mm,
+	left=29mm,
 	right=10mm, 
 	top=20mm,
 	bottom=20mm,
@@ -90,10 +90,10 @@
 {\large\bfseries}{\thechapter}{0.5em}{\large\centering}
 
 \titleformat{\chapter}[block]
-{\large\bfseries}{\thechapter}{0.5em}{\large\raggedright}
+{\hspace{\parindent}\large\bfseries}{\thechapter}{0.5em}{\large\raggedright}
 
 \titleformat{\section}[block]
-{\large\bfseries}{\thesection}{0.5em}{\large\raggedright}
+{\hspace{\parindent}\large\bfseries}{\thesection}{0.5em}{\large\raggedright}
 \renewcommand{\thesection}{\arabic{chapter}.\arabic{section}.}
 
 \titleformat{\subsection}[block]
@@ -119,7 +119,7 @@
 	singlelinecheck=false,
 ]{caption}
 
-\captionsetup[figure]{justification=centering}
+\captionsetup[figure]{name={Рисунок},justification=centering}
 \captionsetup[table]{justification=raggedleft}
 \captionsetup[listing]{justification=raggedright}
 
@@ -220,12 +220,13 @@
 	showstringspaces=false,
 	numbersep=10pt,
 	tabsize=4,
-	frame=tblr,	
+	frame=single,	
 	xleftmargin=25pt,
 	framexleftmargin=18pt,
 	framexrightmargin=-5pt,
 %	framexbottommargin=10pt,
 %	linewidth=0.95\pagewidth
+	escapeinside=``
 }
 
 \usepackage[ruled,linesnumbered,resetcount,algochapter]{algorithm2e}
@@ -294,3 +295,25 @@
 
 \usepackage{url}
 \urlstyle{same}
+
+% ----------------------------------------- CONTENT ---------------------------------------
+
+\usepackage{tocloft}
+
+\setlength{\cftbeforetoctitleskip}{0pt}
+\renewcommand{\contentsname}{СОДЕРЖАНИЕ}
+\renewcommand{\cfttoctitlefont}{\hfill\normalsize\bfseries}
+\renewcommand{\cftaftertoctitle}{\hfill\mbox{}}
+
+
+% Remove padding for TOC entries
+\renewcommand{\cftsecindent}{0em}
+\renewcommand{\cftsubsecindent}{0em}
+\renewcommand{\cftsubsubsecindent}{0em}
+
+% Customizing TOC entries font and alignment
+\renewcommand{\cftsecfont}{\normalsize}
+\renewcommand{\cftsubsecfont}{\normalsize}
+\renewcommand{\cftsubsubsecfont}{\normalsize}
+
+\setlength{\cftbeforetoctitleskip}{-20pt}
