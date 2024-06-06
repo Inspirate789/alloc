@@ -1,3 +1,3 @@
-module alloc
+module github.com/Inspirate789/alloc
 
-go 1.21
+go 1.22.0
